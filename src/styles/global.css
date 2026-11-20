@@ -1,5 +1,7 @@
 @import '@fontsource/great-vibes';
 @import '@fontsource-variable/outfit';
+@import '@fontsource/cormorant-garamond/500-italic.css';
+@import '@fontsource/cormorant-garamond/600-italic.css';
 
 :root {
 	/* Palet Aethra 03: biru tua + emas (acuan bordir dan logo masadagri) */
@@ -15,6 +17,7 @@
 
 	--font-script: 'Great Vibes', cursive;
 	--font-body: 'Outfit Variable', system-ui, sans-serif;
+	--font-serif: 'Cormorant Garamond', Georgia, serif;
 
 	--radius: 14px;
 	--content-width: 72rem;
@@ -39,6 +42,7 @@ html {
 
 body {
 	margin: 0;
+	overflow-x: clip;
 	min-height: 100vh;
 	display: flex;
 	flex-direction: column;

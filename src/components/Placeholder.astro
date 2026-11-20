@@ -1,0 +1,27 @@
+---
+interface Props {
+	judul: string;
+	catatan: string;
+}
+const { judul, catatan } = Astro.props;
+---
+
+<section class="ph container">
+	<h1>{judul}</h1>
+	<p>{catatan}</p>
+	<a href="/">Kembali ke Rumah Aethra</a>
+</section>
+
+<style>
+	.ph {
+		min-height: 60vh;
+		display: grid;
+		place-content: center;
+		text-align: center;
+		gap: 0.5rem;
+	}
+	p {
+		color: var(--ink-soft);
+		margin: 0 0 1rem;
+	}
+</style>

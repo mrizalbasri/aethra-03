@@ -11,6 +11,9 @@ importers:
       '@fontsource-variable/outfit':
         specifier: ^5.3.0
         version: 5.3.0
+      '@fontsource/cormorant-garamond':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@fontsource/great-vibes':
         specifier: ^5.3.0
         version: 5.3.0
@@ -237,6 +240,9 @@ packages:
 
   '@fontsource-variable/outfit@5.3.0':
     resolution: {integrity: sha512-fPb5XnYK0k7SbR++HEmm4+ZqDszmLKQ+sPRUr8oQ/KNC0vy6r6hazJFe8iYozv4cqlHbvJ/JECkJWrfDodUMVQ==}
+
+  '@fontsource/cormorant-garamond@5.3.0':
+    resolution: {integrity: sha512-weuGsCirGVWBWqpt6YUp0yLThTe4G8YO45noq8wxeJCRvEpq5lFrxNMFSTxcyOyV5k5otzJ8guDzYegdYlcLMQ==}
 
   '@fontsource/great-vibes@5.3.0':
     resolution: {integrity: sha512-1w60cXzXnC9V4y943po8044O1mqRQBiTTK75h7OpZE+1VQtx+KlAAzoIyEE5KNzu05gUpxaCQg7cbL7ITSwegQ==}
@@ -1704,6 +1710,8 @@ snapshots:
     optional: true
 
   '@fontsource-variable/outfit@5.3.0': {}
+
+  '@fontsource/cormorant-garamond@5.3.0': {}
 
   '@fontsource/great-vibes@5.3.0': {}
 

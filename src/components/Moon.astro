@@ -1,0 +1,25 @@
+---
+// Bulan sabit emas (acuan bordir Aethra). Dekoratif.
+const { class: className = '' } = Astro.props;
+---
+
+<svg class={`moon ${className}`} viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+	<defs>
+		<mask id="moon-cut">
+			<rect width="200" height="200" fill="white" />
+			<circle cx="128" cy="86" r="74" fill="black" />
+		</mask>
+		<linearGradient id="moon-gold" x1="0" y1="0" x2="1" y2="1">
+			<stop offset="0" stop-color="#f7e3a0" />
+			<stop offset="1" stop-color="#c9a13b" />
+		</linearGradient>
+	</defs>
+	<circle cx="96" cy="104" r="84" fill="url(#moon-gold)" mask="url(#moon-cut)" />
+</svg>
+
+<style>
+	.moon {
+		display: block;
+		filter: drop-shadow(0 0 28px rgb(228 191 92 / 0.45));
+	}
+</style>
