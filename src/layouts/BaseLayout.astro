@@ -1,0 +1,155 @@
+---
+import '../styles/global.css';
+
+interface Props {
+	title?: string;
+	description?: string;
+}
+
+const {
+	title = 'Aethra 03',
+	description = 'Dokumentasi angkatan Aethra 03: wajah, kenangan, dan momen kita.',
+} = Astro.props;
+
+const pageTitle = title === 'Aethra 03' ? title : `${title} · Aethra 03`;
+const path = Astro.url.pathname;
+
+const nav = [
+	{ href: '/', label: 'Rumah Aethra' },
+	{ href: '/rasi', label: 'Rasi Aethra' },
+	{ href: '/rasa', label: 'Rasa' },
+	{ href: '/cipta', label: 'Cipta' },
+];
+---
+
+<!doctype html>
+<html lang="id">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="description" content={description} />
+		<meta name="theme-color" content="#0a1530" />
+		<meta name="robots" content="noindex, nofollow" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{pageTitle}</title>
+	</head>
+	<body>
+		<a class="skip-link" href="#konten">Lewati ke konten</a>
+		<div class="starfield" aria-hidden="true"></div>
+
+		<header class="site-header">
+			<div class="container header-inner">
+				<a class="brand" href="/" aria-label="Aethra 03, ke beranda">Aethra <span>03</span></a>
+				<nav aria-label="Utama">
+					<ul>
+						{
+							nav.map((item) => (
+								<li>
+									<a
+										href={item.href}
+										aria-current={path === item.href ? 'page' : undefined}
+									>
+										{item.label}
+									</a>
+								</li>
+							))
+						}
+					</ul>
+				</nav>
+			</div>
+		</header>
+
+		<main id="konten">
+			<slot />
+		</main>
+
+		<footer class="site-footer">
+			<div class="container">
+				<p class="motto">Cipta · Rasa · Karsa</p>
+				<p>Inisiatif peserta Aethra 03. Bukan situs resmi Kementerian Dalam Negeri.</p>
+			</div>
+		</footer>
+	</body>
+</html>
+
+<style>
+	main {
+		flex: 1;
+	}
+
+	.site-header {
+		position: sticky;
+		top: 0;
+		z-index: 50;
+		backdrop-filter: blur(10px);
+		background: color-mix(in srgb, var(--navy-950) 70%, transparent);
+		border-bottom: 1px solid color-mix(in srgb, var(--gold-500) 25%, transparent);
+	}
+
+	.header-inner {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding-block: 0.6rem;
+		flex-wrap: wrap;
+	}
+
+	.brand {
+		font-family: var(--font-script);
+		font-size: 1.9rem;
+		text-decoration: none;
+		color: var(--gold-300);
+		line-height: 1;
+	}
+
+	.brand span {
+		font-family: var(--font-body);
+		font-size: 0.9rem;
+		color: var(--gold-500);
+		letter-spacing: 0.1em;
+	}
+
+	ul {
+		display: flex;
+		gap: 0.25rem 1.25rem;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		flex-wrap: wrap;
+	}
+
+	nav a {
+		color: var(--ink-soft);
+		text-decoration: none;
+		font-size: 0.95rem;
+		padding: 0.35rem 0.1rem;
+		border-bottom: 2px solid transparent;
+	}
+
+	nav a:hover,
+	nav a[aria-current='page'] {
+		color: var(--gold-300);
+		border-bottom-color: var(--gold-400);
+	}
+
+	.site-footer {
+		margin-top: 4rem;
+		padding: 2rem 0 2.5rem;
+		text-align: center;
+		color: var(--ink-soft);
+		font-size: 0.9rem;
+		border-top: 1px solid color-mix(in srgb, var(--gold-500) 25%, transparent);
+	}
+
+	.site-footer p {
+		margin: 0.25rem 0;
+	}
+
+	.motto {
+		font-family: var(--font-script);
+		font-size: 1.6rem;
+		color: var(--gold-400);
+	}
+</style>
