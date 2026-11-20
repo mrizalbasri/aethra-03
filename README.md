@@ -22,8 +22,13 @@ Memakai [pnpm](https://pnpm.io).
 | `pnpm build`     | Bangun situs ke folder `dist/`     |
 | `pnpm preview`   | Lihat hasil build secara lokal     |
 
+## Menambah isi
+
+Lihat [docs/panduan-kurator.md](./docs/panduan-kurator.md).
+
 ## Privasi
 
-- Jangan menaruh nomor telepon atau kontak pribadi di data apa pun.
-- Hanya peserta yang sudah setuju yang boleh ditampilkan.
+- Repo ini **publik**. Jangan commit nama, foto, atau pesan peserta sebelum orangnya setuju.
+- Jangan menaruh nomor telepon atau kontak pribadi di data apa pun. Skema menolaknya.
+- Hanya peserta dengan `"setuju": true` yang ditampilkan.
 - Situs ini menyertakan `noindex` agar tidak muncul di mesin pencari.
