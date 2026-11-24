@@ -8,17 +8,17 @@ interface Props {
 
 const {
 	title = 'Aethra 03',
-	description = 'Dokumentasi angkatan Aethra 03: wajah, kenangan, dan momen kita.',
+	description = 'Dokumentasi dan buku tahunan angkatan Aethra 03: 64 rekan Masadagri Batch III, Kementerian Dalam Negeri.',
 } = Astro.props;
 
 const pageTitle = title === 'Aethra 03' ? title : `${title} · Aethra 03`;
 const path = Astro.url.pathname;
 
 const nav = [
-	{ href: '/', label: 'Rumah Aethra' },
-	{ href: '/rasi', label: 'Rasi Aethra' },
-	{ href: '/rasa', label: 'Rasa' },
-	{ href: '/cipta', label: 'Cipta' },
+	{ href: '/', num: '01', label: 'Rumah Aethra' },
+	{ href: '/rasi', num: '02', label: 'Rasi Aethra' },
+	{ href: '/rasa', num: '03', label: 'Jejak Rasa' },
+	{ href: '/cipta', num: '04', label: 'Galeri Cipta' },
 ];
 ---
 
@@ -28,7 +28,7 @@ const nav = [
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="description" content={description} />
-		<meta name="theme-color" content="#0a1530" />
+		<meta name="theme-color" content="#fbf9f4" />
 		<meta name="robots" content="noindex, nofollow" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="generator" content={Astro.generator} />
@@ -36,21 +36,39 @@ const nav = [
 	</head>
 	<body>
 		<a class="skip-link" href="#konten">Lewati ke konten</a>
-		<div class="starfield" aria-hidden="true"></div>
+
+		<!-- Pita atas: Kepala Berita / Arsip Resmi -->
+		<div class="masthead-top">
+			<div class="container masthead-inner">
+				<span class="masthead-left">
+					<span class="bullet" aria-hidden="true">■</span>
+					ARSIP DOKUMENTASI ANGKATAN · MASADAGRI BATCH III
+				</span>
+				<span class="masthead-right">
+					KEMENTERIAN DALAM NEGERI RI · VOL. 03 · 2024
+				</span>
+			</div>
+		</div>
 
 		<header class="site-header">
 			<div class="container header-inner">
-				<a class="brand" href="/" aria-label="Aethra 03, ke beranda">Aethra <span>03</span></a>
-				<nav aria-label="Utama">
-					<ul>
+				<a class="brand" href="/" aria-label="Aethra 03, kembali ke beranda">
+					<span class="brand-script">Aethra</span>
+					<span class="brand-num">03</span>
+					<span class="brand-tag">BUKU TAHUNAN</span>
+				</a>
+				<nav aria-label="Navigasi Utama">
+					<ul class="nav-list">
 						{
 							nav.map((item) => (
 								<li>
 									<a
 										href={item.href}
 										aria-current={path === item.href ? 'page' : undefined}
+										class="nav-link"
 									>
-										{item.label}
+										<span class="nav-num">{item.num}</span>
+										<span class="nav-label">{item.label}</span>
 									</a>
 								</li>
 							))
@@ -65,9 +83,32 @@ const nav = [
 		</main>
 
 		<footer class="site-footer">
-			<div class="container">
-				<p class="motto">Cipta · Rasa · Karsa</p>
-				<p>Inisiatif peserta Aethra 03. Bukan situs resmi Kementerian Dalam Negeri.</p>
+			<div class="container footer-inner">
+				<div class="footer-col-brand">
+					<span class="footer-title">Aethra 03</span>
+					<p class="footer-motto">Cipta · Rasa · Karsa</p>
+					<p class="footer-note">
+						Arsip kenangan dan dokumentasi dibuat secara independen oleh peserta Aethra 03
+						untuk merawat memori kebersamaan selama masa bakti di Kementerian Dalam Negeri.
+					</p>
+				</div>
+				<div class="footer-col-meta">
+					<div class="meta-box">
+						<span class="meta-label">STATUS DOKUMEN</span>
+						<span class="meta-val">Arsip Terbuka Angkatan</span>
+					</div>
+					<div class="meta-box">
+						<span class="meta-label">TOTAL REKAN</span>
+						<span class="meta-val">64 Peserta Masadagri</span>
+					</div>
+					<div class="meta-box">
+						<span class="meta-label">LOKASI ARSIP</span>
+						<span class="meta-val">Jakarta Pusat, Indonesia</span>
+					</div>
+				</div>
+			</div>
+			<div class="container footer-bottom">
+				<p>© 2024 Aethra 03. Bukan publikasi resmi Kementerian Dalam Negeri Republik Indonesia.</p>
 			</div>
 		</footer>
 	</body>
@@ -78,78 +119,228 @@ const nav = [
 		flex: 1;
 	}
 
+	/* Pita Kepala Surat / Masthead */
+	.masthead-top {
+		background: var(--navy-deep);
+		color: #ffffff;
+		font-family: var(--font-mono);
+		font-size: 0.68rem;
+		letter-spacing: 0.12em;
+		padding-block: 0.4rem;
+		border-bottom: 1px solid var(--navy-primary);
+	}
+
+	.masthead-inner {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		flex-wrap: wrap;
+	}
+
+	.bullet {
+		color: var(--gold-badge);
+		margin-right: 0.35rem;
+		font-size: 0.6rem;
+	}
+
+	/* Navigasi Header */
 	.site-header {
 		position: sticky;
 		top: 0;
 		z-index: 50;
-		backdrop-filter: blur(10px);
-		background: color-mix(in srgb, var(--navy-950) 70%, transparent);
-		border-bottom: 1px solid color-mix(in srgb, var(--gold-500) 25%, transparent);
+		background: rgba(251, 249, 244, 0.94);
+		backdrop-filter: blur(8px);
+		border-bottom: 1px solid var(--paper-border-strong);
 	}
 
 	.header-inner {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: 1rem;
-		padding-block: 0.6rem;
+		gap: 1.5rem;
+		padding-block: 0.75rem;
 		flex-wrap: wrap;
 	}
 
 	.brand {
-		font-family: var(--font-script);
-		font-size: 1.9rem;
+		display: inline-flex;
+		align-items: baseline;
+		gap: 0.45rem;
 		text-decoration: none;
-		color: var(--gold-300);
+		color: var(--navy-deep);
 		line-height: 1;
 	}
 
-	.brand span {
-		font-family: var(--font-body);
-		font-size: 0.9rem;
-		color: var(--gold-500);
-		letter-spacing: 0.1em;
+	.brand-script {
+		font-family: var(--font-script);
+		font-size: 2.2rem;
+		color: var(--navy-deep);
+		line-height: 0.9;
 	}
 
-	ul {
+	.brand-num {
+		font-family: var(--font-serif);
+		font-style: italic;
+		font-size: 1.4rem;
+		font-weight: 600;
+		color: var(--gold-accent);
+	}
+
+	.brand-tag {
+		font-family: var(--font-mono);
+		font-size: 0.62rem;
+		letter-spacing: 0.14em;
+		padding: 0.15rem 0.4rem;
+		border: 1px solid var(--paper-border-strong);
+		border-radius: var(--radius-sm);
+		background: var(--paper-warm);
+		color: var(--ink-muted);
+		align-self: center;
+	}
+
+	.nav-list {
 		display: flex;
-		gap: 0.25rem 1.25rem;
+		gap: 0.35rem 1.4rem;
 		list-style: none;
 		margin: 0;
 		padding: 0;
 		flex-wrap: wrap;
 	}
 
-	nav a {
-		color: var(--ink-soft);
+	.nav-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		color: var(--ink-muted);
 		text-decoration: none;
-		font-size: 0.95rem;
-		padding: 0.35rem 0.1rem;
-		border-bottom: 2px solid transparent;
-	}
-
-	nav a:hover,
-	nav a[aria-current='page'] {
-		color: var(--gold-300);
-		border-bottom-color: var(--gold-400);
-	}
-
-	.site-footer {
-		margin-top: 4rem;
-		padding: 2rem 0 2.5rem;
-		text-align: center;
-		color: var(--ink-soft);
 		font-size: 0.9rem;
-		border-top: 1px solid color-mix(in srgb, var(--gold-500) 25%, transparent);
+		font-weight: 500;
+		padding: 0.35rem 0.2rem;
+		border-bottom: 2px solid transparent;
+		transition:
+			color 0.2s ease,
+			border-color 0.2s ease;
 	}
 
-	.site-footer p {
-		margin: 0.25rem 0;
+	.nav-num {
+		font-family: var(--font-mono);
+		font-size: 0.7rem;
+		color: var(--ink-faint);
 	}
 
-	.motto {
+	.nav-link:hover {
+		color: var(--navy-deep);
+		border-bottom-color: var(--paper-border-strong);
+	}
+
+	.nav-link[aria-current='page'] {
+		color: var(--navy-deep);
+		font-weight: 600;
+		border-bottom-color: var(--navy-primary);
+	}
+
+	.nav-link[aria-current='page'] .nav-num {
+		color: var(--gold-accent);
+	}
+
+	/* Footer / Kolofon Arsip */
+	.site-footer {
+		margin-top: 6rem;
+		background: var(--paper-warm);
+		border-top: 2px solid var(--paper-border-strong);
+		padding-top: 3.5rem;
+		padding-bottom: 2.5rem;
+		color: var(--ink-muted);
+		font-size: 0.88rem;
+	}
+
+	.footer-inner {
+		display: grid;
+		grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+		gap: 3rem;
+		padding-bottom: 2.5rem;
+		border-bottom: 1px solid var(--paper-border);
+	}
+
+	.footer-title {
 		font-family: var(--font-script);
-		font-size: 1.6rem;
-		color: var(--gold-400);
+		font-size: 2.6rem;
+		color: var(--navy-deep);
+		display: block;
+		line-height: 1;
+		margin-bottom: 0.25rem;
+	}
+
+	.footer-motto {
+		font-family: var(--font-serif);
+		font-style: italic;
+		font-weight: 500;
+		font-size: 1.25rem;
+		color: var(--gold-accent);
+		margin: 0 0 0.8rem;
+	}
+
+	.footer-note {
+		max-width: 34rem;
+		line-height: 1.6;
+		color: var(--ink-muted);
+		margin: 0;
+	}
+
+	.footer-col-meta {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+		gap: 1.5rem;
+		align-content: start;
+	}
+
+	.meta-box {
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+		border-left: 2px solid var(--paper-border-strong);
+		padding-left: 0.8rem;
+	}
+
+	.meta-label {
+		font-family: var(--font-mono);
+		font-size: 0.65rem;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--ink-faint);
+	}
+
+	.meta-val {
+		font-family: var(--font-body);
+		font-size: 0.85rem;
+		font-weight: 600;
+		color: var(--navy-deep);
+	}
+
+	.footer-bottom {
+		padding-top: 1.8rem;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 1rem;
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
+		color: var(--ink-faint);
+	}
+
+	.footer-bottom p {
+		margin: 0;
+	}
+
+	@media (max-width: 768px) {
+		.footer-inner {
+			grid-template-columns: 1fr;
+			gap: 2rem;
+		}
+		.masthead-right {
+			display: none;
+		}
 	}
 </style>

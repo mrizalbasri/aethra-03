@@ -1,0 +1,184 @@
+---
+interface Props {
+	caption: string;
+	subcaption?: string;
+	tag?: string;
+	rotation?: number;
+	class?: string;
+	aspectRatio?: string;
+}
+
+const {
+	caption,
+	subcaption = 'Masadagri Batch III · 2024',
+	tag = 'DOC.03',
+	rotation = 0,
+	class: className = '',
+	aspectRatio = '4/3',
+} = Astro.props;
+---
+
+<figure
+	class={`polaroid ${className}`}
+	style={`--rotation: ${rotation}deg; --aspect: ${aspectRatio};`}
+>
+	<div class="tape" aria-hidden="true"></div>
+	<div class="photo-frame">
+		<div class="photo-inner">
+			<div class="photo-placeholder">
+				<svg
+					class="icon-camera"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.2"
+					aria-hidden="true"
+				>
+					<path
+						d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+					></path>
+					<circle cx="12" cy="13" r="4"></circle>
+				</svg>
+				<span class="photo-hint">Foto dokumentasi menyusul</span>
+			</div>
+			<span class="stamp-tag">{tag}</span>
+		</div>
+	</div>
+	<figcaption class="polaroid-caption">
+		<span class="caption-title">{caption}</span>
+		{subcaption && <span class="caption-sub">{subcaption}</span>}
+	</figcaption>
+</figure>
+
+<style>
+	.polaroid {
+		position: relative;
+		margin: 0;
+		padding: 0.9rem 0.9rem 1.4rem;
+		background: #ffffff;
+		border: 1px solid var(--paper-border-strong, #d8cebe);
+		border-radius: 2px;
+		box-shadow:
+			0 15px 35px -10px rgba(17, 26, 40, 0.16),
+			0 2px 8px rgba(17, 26, 40, 0.06);
+		transform: rotate(var(--rotation));
+		transition:
+			transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+			box-shadow 0.3s ease;
+		display: inline-flex;
+		flex-direction: column;
+		width: 100%;
+		max-width: 22rem;
+		box-sizing: border-box;
+	}
+
+	.polaroid:hover {
+		transform: rotate(0deg) scale(1.02);
+		box-shadow:
+			0 22px 45px -12px rgba(17, 26, 40, 0.22),
+			0 4px 12px rgba(17, 26, 40, 0.08);
+		z-index: 10;
+	}
+
+	.tape {
+		position: absolute;
+		top: -0.85rem;
+		left: 50%;
+		transform: translateX(-50%) rotate(-1.5deg);
+		width: 5.5rem;
+		height: 1.6rem;
+		background: rgba(238, 226, 195, 0.78);
+		border-left: 2px dashed rgba(200, 185, 145, 0.6);
+		border-right: 2px dashed rgba(200, 185, 145, 0.6);
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+		backdrop-filter: blur(2px);
+		z-index: 2;
+		pointer-events: none;
+	}
+
+	.photo-frame {
+		position: relative;
+		background: var(--paper-warm, #f4efe6);
+		border: 1px solid var(--paper-border, #e5ddcf);
+		overflow: hidden;
+		aspect-ratio: var(--aspect);
+	}
+
+	.photo-inner {
+		width: 100%;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		position: relative;
+		padding: 1.25rem;
+		box-sizing: border-box;
+		background:
+			radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.6) 0%, transparent 70%),
+			linear-gradient(145deg, #f7f2e8, #ebe3d3);
+	}
+
+	.photo-placeholder {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.5rem;
+		color: var(--ink-faint, #7c8899);
+		text-align: center;
+	}
+
+	.icon-camera {
+		width: 2.2rem;
+		height: 2.2rem;
+		color: var(--navy-soft, #2c466e);
+		opacity: 0.65;
+	}
+
+	.photo-hint {
+		font-family: var(--font-mono, monospace);
+		font-size: 0.72rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--ink-muted, #566474);
+	}
+
+	.stamp-tag {
+		position: absolute;
+		bottom: 0.5rem;
+		right: 0.6rem;
+		font-family: var(--font-mono, monospace);
+		font-size: 0.62rem;
+		font-weight: 600;
+		letter-spacing: 0.12em;
+		color: var(--gold-accent, #946c1e);
+		border: 1px solid var(--gold-accent, #946c1e);
+		padding: 0.1rem 0.35rem;
+		border-radius: 2px;
+		opacity: 0.8;
+	}
+
+	.polaroid-caption {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+		padding-top: 0.75rem;
+		padding-inline: 0.2rem;
+	}
+
+	.caption-title {
+		font-family: var(--font-serif, serif);
+		font-style: italic;
+		font-weight: 600;
+		font-size: 1.15rem;
+		line-height: 1.2;
+		color: var(--navy-deep, #0c192c);
+	}
+
+	.caption-sub {
+		font-family: var(--font-mono, monospace);
+		font-size: 0.68rem;
+		letter-spacing: 0.05em;
+		color: var(--ink-muted, #566474);
+	}
+</style>

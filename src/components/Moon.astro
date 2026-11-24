@@ -1,25 +1,26 @@
 ---
-// Bulan sabit emas (acuan bordir Aethra). Dekoratif.
+// Lambang bulan sabit linework (acuan bordir Aethra). Dekoratif.
+interface Props {
+	class?: string;
+}
 const { class: className = '' } = Astro.props;
 ---
 
-<svg class={`moon ${className}`} viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+<svg class={`moon-icon ${className}`} viewBox="0 0 200 200" aria-hidden="true" focusable="false">
 	<defs>
 		<mask id="moon-cut">
-			<rect width="200" height="200" fill="white" />
-			<circle cx="128" cy="86" r="74" fill="black" />
+			<rect width="200" height="200" fill="white"></rect>
+			<circle cx="128" cy="86" r="74" fill="black"></circle>
 		</mask>
-		<linearGradient id="moon-gold" x1="0" y1="0" x2="1" y2="1">
-			<stop offset="0" stop-color="#f7e3a0" />
-			<stop offset="1" stop-color="#c9a13b" />
-		</linearGradient>
 	</defs>
-	<circle cx="96" cy="104" r="84" fill="url(#moon-gold)" mask="url(#moon-cut)" />
+	<circle cx="96" cy="104" r="84" fill="currentColor" mask="url(#moon-cut)"></circle>
 </svg>
 
 <style>
-	.moon {
+	.moon-icon {
 		display: block;
-		filter: drop-shadow(0 0 28px rgb(228 191 92 / 0.45));
+		width: 1.5rem;
+		height: 1.5rem;
+		color: var(--gold-accent, #9a6e1a);
 	}
 </style>

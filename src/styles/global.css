@@ -1,26 +1,41 @@
 @import '@fontsource/great-vibes';
 @import '@fontsource-variable/outfit';
+@import '@fontsource/cormorant-garamond/400.css';
 @import '@fontsource/cormorant-garamond/500-italic.css';
 @import '@fontsource/cormorant-garamond/600-italic.css';
+@import '@fontsource/cormorant-garamond/700.css';
 
 :root {
-	/* Palet Aethra 03: biru tua + emas (acuan bordir dan logo masadagri) */
-	--navy-950: #050b18;
-	--navy-900: #0a1530;
-	--navy-800: #10224a;
-	--navy-600: #1c3a78;
-	--gold-300: #f3d98b;
-	--gold-400: #e4bf5c;
-	--gold-500: #c9a13b;
-	--ink: #eaeefb;
-	--ink-soft: #aab4d4;
+	/* Palet Arsip Angkatan / Editorial Paper & Navy Ink */
+	--paper: #fbf9f4;
+	--paper-warm: #f4efe5;
+	--paper-card: #ffffff;
+	--paper-border: #e4dcce;
+	--paper-border-strong: #c8bdae;
+
+	--navy-deep: #0a1424;
+	--navy-primary: #122238;
+	--navy-soft: #243b5e;
+
+	--ink: #111a28;
+	--ink-muted: #4e5c6e;
+	--ink-faint: #8a96a7;
+	--ink-ghost: #cbd4e0;
+
+	--gold-accent: #9a6e1a;
+	--gold-badge: #c4952c;
+	--gold-light: #faefd2;
+	--tape-bg: rgba(238, 226, 195, 0.75);
 
 	--font-script: 'Great Vibes', cursive;
-	--font-body: 'Outfit Variable', system-ui, sans-serif;
+	--font-body: 'Outfit Variable', system-ui, -apple-system, sans-serif;
 	--font-serif: 'Cormorant Garamond', Georgia, serif;
+	--font-mono: ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
 
-	--radius: 14px;
-	--content-width: 72rem;
+	--radius-sm: 2px;
+	--radius: 6px;
+	--radius-lg: 10px;
+	--content-width: 74rem;
 }
 
 *,
@@ -31,7 +46,8 @@
 
 html {
 	scroll-behavior: smooth;
-	color-scheme: dark;
+	color-scheme: light;
+	background-color: var(--paper);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -48,89 +64,143 @@ body {
 	flex-direction: column;
 	font-family: var(--font-body);
 	color: var(--ink);
-	background:
-		radial-gradient(ellipse at 20% -10%, var(--navy-600) 0%, transparent 55%),
-		radial-gradient(ellipse at 90% 10%, #16306a 0%, transparent 45%),
-		linear-gradient(180deg, var(--navy-900), var(--navy-950) 70%);
-	background-attachment: fixed;
+	background-color: var(--paper);
+	background-image:
+		radial-gradient(ellipse at 50% -10%, #ffffff 0%, var(--paper) 70%),
+		linear-gradient(180deg, var(--paper) 0%, #f7f3ea 100%);
 	line-height: 1.6;
 }
 
-/* Taburan bintang halus: hanya gradien, tanpa gambar */
-.starfield {
-	position: fixed;
-	inset: 0;
-	z-index: -1;
-	pointer-events: none;
-	background-image:
-		radial-gradient(1.5px 1.5px at 12% 18%, var(--gold-300), transparent),
-		radial-gradient(1px 1px at 28% 62%, #fff, transparent),
-		radial-gradient(1.5px 1.5px at 44% 30%, var(--gold-300), transparent),
-		radial-gradient(1px 1px at 63% 78%, #fff, transparent),
-		radial-gradient(1.5px 1.5px at 78% 22%, var(--gold-300), transparent),
-		radial-gradient(1px 1px at 90% 55%, #fff, transparent),
-		radial-gradient(1px 1px at 8% 86%, #fff, transparent),
-		radial-gradient(1.5px 1.5px at 55% 8%, #fff, transparent);
-	opacity: 0.8;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-	.starfield {
-		animation: twinkle 7s ease-in-out infinite alternate;
-	}
-}
-
-@keyframes twinkle {
-	from {
-		opacity: 0.45;
-	}
-	to {
-		opacity: 0.9;
-	}
-}
-
+/* Tipografi dasar */
 h1,
 h2,
-h3 {
-	font-family: var(--font-script);
-	font-weight: 400;
-	color: var(--gold-300);
-	line-height: 1.1;
+h3,
+h4 {
+	font-family: var(--font-serif);
+	font-weight: 600;
+	color: var(--navy-deep);
+	line-height: 1.15;
 	margin: 0 0 0.5em;
 }
 
 h1 {
-	font-size: clamp(3rem, 9vw, 6rem);
+	font-size: clamp(2.8rem, 7vw, 5rem);
 }
 
 h2 {
-	font-size: clamp(2rem, 5vw, 3.2rem);
+	font-size: clamp(2rem, 4.5vw, 3.2rem);
+}
+
+h3 {
+	font-size: clamp(1.4rem, 3vw, 2.2rem);
+}
+
+p {
+	margin: 0 0 1em;
 }
 
 a {
-	color: var(--gold-300);
+	color: var(--navy-primary);
+	text-decoration: underline;
+	text-underline-offset: 3px;
+	transition: color 0.2s ease;
+}
+
+a:hover {
+	color: var(--gold-accent);
 }
 
 a:focus-visible,
 button:focus-visible {
-	outline: 2px solid var(--gold-400);
+	outline: 2px solid var(--navy-primary);
 	outline-offset: 3px;
 }
 
+/* Wadah */
 .container {
-	width: min(100% - 2rem, var(--content-width));
+	width: min(100% - 2.5rem, var(--content-width));
 	margin-inline: auto;
+}
+
+/* Tombol Editorial */
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	padding: 0.8rem 1.4rem;
+	border-radius: var(--radius-sm);
+	font-family: var(--font-body);
+	font-size: 0.92rem;
+	font-weight: 500;
+	text-decoration: none;
+	transition:
+		background-color 0.2s ease,
+		border-color 0.2s ease,
+		transform 0.2s ease,
+		box-shadow 0.2s ease;
+	cursor: pointer;
+}
+
+.btn-primary {
+	background-color: var(--navy-primary);
+	color: #ffffff;
+	border: 1px solid var(--navy-deep);
+	box-shadow: 0 4px 12px rgba(10, 20, 36, 0.15);
+}
+
+.btn-primary:hover {
+	background-color: var(--navy-deep);
+	color: #ffffff;
+	transform: translateY(-1px);
+	box-shadow: 0 6px 16px rgba(10, 20, 36, 0.2);
+}
+
+.btn-secondary {
+	background-color: #ffffff;
+	color: var(--navy-primary);
+	border: 1px solid var(--paper-border-strong);
+	box-shadow: 0 2px 6px rgba(10, 20, 36, 0.05);
+}
+
+.btn-secondary:hover {
+	background-color: var(--paper-warm);
+	border-color: var(--navy-soft);
+	color: var(--navy-deep);
+	transform: translateY(-1px);
+}
+
+/* Label Arsip */
+.archival-tag {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	font-family: var(--font-mono);
+	font-size: 0.72rem;
+	letter-spacing: 0.15em;
+	text-transform: uppercase;
+	color: var(--gold-accent);
+	font-weight: 600;
+	margin: 0 0 0.8rem;
+}
+
+.archival-tag::before {
+	content: '//';
+	color: var(--ink-faint);
 }
 
 .skip-link {
 	position: absolute;
 	left: -999px;
 	top: 0.5rem;
-	background: var(--gold-400);
-	color: var(--navy-950);
+	background: var(--navy-primary);
+	color: #ffffff;
 	padding: 0.5rem 1rem;
-	border-radius: 8px;
+	border-radius: var(--radius-sm);
 	z-index: 100;
+	font-family: var(--font-mono);
+	font-size: 0.8rem;
+	text-decoration: none;
 }
 
 .skip-link:focus {
