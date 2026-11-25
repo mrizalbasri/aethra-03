@@ -1,11 +1,24 @@
 ---
 import { getCollection } from 'astro:content';
+import { getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Polaroid from '../components/Polaroid.astro';
+import MemberModal from '../components/MemberModal.astro';
+import type { MemberItem } from '../scripts/memberModal';
 
 const TOTAL = 64;
 const peserta = (await getCollection('peserta', ({ data }) => data.setuju)).sort((a, b) =>
 	a.data.nama.localeCompare(b.data.nama, 'id'),
+);
+const kenangan = await getCollection('kenangan');
+const kegiatan = (await getCollection('kegiatan')).sort(
+	(a, b) => b.data.tanggal.getTime() - a.data.tanggal.getTime(),
+);
+
+const fotoModules = import.meta.glob<{ default: ImageMetadata }>(
+	'../assets/peserta/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}',
+	{ eager: true },
 );
 
 const inisial = (nama: string) =>
@@ -16,66 +29,80 @@ const inisial = (nama: string) =>
 		.map((k) => k[0]!.toUpperCase())
 		.join('');
 
-const kontakSheet = Array.from({ length: TOTAL }, (_, i) => {
-	const p = peserta[i];
-	const no = String(i + 1).padStart(2, '0');
-	if (!p) {
+const kontakSheet: MemberItem[] = await Promise.all(
+	Array.from({ length: TOTAL }, async (_, i) => {
+		const p = peserta[i];
+		const no = String(i + 1).padStart(2, '0');
+		if (!p) {
+			return {
+				no,
+				inisial: '',
+				nama: `Menunggu Profil Rekan #${no}`,
+				meta: 'Slot dokumentasi terbuka untuk anggota Aethra 03',
+				tercatat: false,
+			};
+		}
+
+		let fotoUrl: string | undefined;
+		if (p.data.foto) {
+			const match = Object.entries(fotoModules).find(([path]) => path.endsWith(`/${p.data.foto}`));
+			if (match) {
+				const optimized = await getImage({ src: match[1].default, width: 480, height: 480 });
+				fotoUrl = optimized.src;
+			}
+		}
+
+		const meta = [p.data.divisi, p.data.daerah].filter(Boolean).join(' · ') || 'Anggota Aethra 03';
 		return {
 			no,
-			inisial: '',
-			nama: `Menunggu Profil Rekan #${no}`,
-			meta: 'Slot dokumentasi terbuka untuk anggota Aethra 03',
-			tercatat: false,
+			inisial: inisial(p.data.nama),
+			nama: p.data.nama,
+			meta,
+			divisi: p.data.divisi,
+			daerah: p.data.daerah,
+			kalimat: p.data.kalimat,
+			pesan: p.data.pesan,
+			fotoUrl,
+			tercatat: true,
 		};
-	}
-
-	const meta = [p.data.divisi, p.data.daerah].filter(Boolean).join(' · ') || 'Anggota Aethra 03';
-	return {
-		no,
-		inisial: inisial(p.data.nama),
-		nama: p.data.nama,
-		meta,
-		tercatat: true,
-	};
-});
+	}),
+);
 
 const spotlightAwal = kontakSheet.find((item) => item.tercatat) ?? kontakSheet[0]!;
+const serializedMembers = JSON.stringify(kontakSheet).replace(/</g, '\\u003c');
 
 const manifesto =
 	'Enam puluh empat orang dari berbagai daerah, dipersatukan dalam satu masa. Di halaman buku tahunan ini kita simpan wajah, cerita, dan jejak langkah agar tetap hangat diingat setelah masa bakti usai.';
 
-const motto = [
+const pilars = [
 	{
 		no: '01',
 		bab: 'PILAR PERTAMA',
 		kata: 'Cipta',
-		isi: 'Karya, dokumentasi kegiatan, dan jejak proyek yang kita bangun bersama.',
-		href: '/cipta',
-		label: 'Buka Galeri',
+		ringkas: 'Karya, dokumentasi kegiatan, dan jejak proyek yang kita bangun bersama.',
 	},
 	{
 		no: '02',
 		bab: 'PILAR KEDUA',
 		kata: 'Rasa',
-		isi: 'Cerita spontan, tawa di sela kesibukan, dan pesan hangat antarteman.',
-		href: '/rasa',
-		label: 'Baca Cerita',
+		ringkas: 'Cerita spontan, tawa di sela kesibukan, dan pesan hangat antarteman.',
 	},
 	{
 		no: '03',
 		bab: 'PILAR KETIGA',
 		kata: 'Karsa',
-		isi: 'Semangat belajar dan pengabdian yang kita bawa pulang ke daerah masing-masing.',
-		href: null,
-		label: 'Segera',
+		ringkas: 'Semangat belajar dan pengabdian yang kita bawa pulang ke daerah masing-masing.',
 	},
 ];
+
+const contohKegiatan = kegiatan[0];
+const contohKenangan = kenangan[0];
 
 const babArsip = [
 	{
 		id: 'rasi',
 		nomor: 'BAGIAN 01',
-		halaman: '64 Rekan',
+		halaman: `${peserta.length} / 64 Rekan`,
 		judul: 'Rasi Aethra',
 		sub: 'Direktori 64 Rekan Seperjuangan',
 		deskripsi:
@@ -85,7 +112,7 @@ const babArsip = [
 	{
 		id: 'rasa',
 		nomor: 'BAGIAN 02',
-		halaman: 'Cerita & Pesan',
+		halaman: `${kenangan.length} Cerita`,
 		judul: 'Jejak Rasa',
 		sub: 'Catatan & Momen Bermakna',
 		deskripsi:
@@ -95,7 +122,7 @@ const babArsip = [
 	{
 		id: 'cipta',
 		nomor: 'BAGIAN 03',
-		halaman: 'Foto & Karya',
+		halaman: `${kegiatan.length} Agenda`,
 		judul: 'Galeri Cipta',
 		sub: 'Dokumentasi Visual Kegiatan',
 		deskripsi:
@@ -137,8 +164,12 @@ const marqueeItems = [
 				</p>
 
 				<div class="hero-cta" data-rise>
-					<a class="btn btn-primary" href="/rasi">Kenali 64 Rekan →</a>
-					<a class="btn btn-secondary" href="#cerita">Baca Cerita Kita ↓</a>
+					<a class="btn btn-primary" href="/rasi" data-magnetic data-cursor="Jelajahi">
+						Kenali 64 Rekan →
+					</a>
+					<a class="btn btn-secondary" href="#cerita" data-magnetic>
+						Baca Cerita Kita ↓
+					</a>
 				</div>
 
 				<dl class="hero-metrics" data-rise>
@@ -157,19 +188,10 @@ const marqueeItems = [
 				</dl>
 			</div>
 
-			<!-- Visual Kanan: Susunan Polaroid & Segel Aethra -->
-			<div class="hero-visual" aria-hidden="true">
-				<div class="polaroid-stack">
-					<div class="stack-item item-back" data-float="0.45">
-						<Polaroid
-							variant="warm"
-							caption="Awal Pertemuan"
-							subcaption="64 Daerah · Satu Angkatan"
-							tag="PROLOG"
-							rotation={6}
-						/>
-					</div>
-					<div class="stack-item item-main" data-float="-0.35">
+			<!-- Visual Kanan: Meja Polaroid Interaktif (Draggable & Shuffleable) -->
+			<div class="hero-desk">
+				<div class="polaroid-deck">
+					<div class="deck-card" data-deck-card data-cursor="Geser">
 						<Polaroid
 							variant="crest"
 							caption="Keluarga Besar Aethra 03"
@@ -178,9 +200,27 @@ const marqueeItems = [
 							rotation={-4}
 						/>
 					</div>
+					<div class="deck-card" data-deck-card data-cursor="Geser">
+						<Polaroid
+							variant="warm"
+							caption="Awal Pertemuan"
+							subcaption="64 Daerah · Satu Angkatan"
+							tag="PROLOG"
+							rotation={5}
+						/>
+					</div>
+					<div class="deck-card" data-deck-card data-cursor="Geser">
+						<Polaroid
+							variant="editorial"
+							caption="Tawa di Sela Tugas"
+							subcaption="Kementerian Dalam Negeri · Jakarta"
+							tag="MEMORI"
+							rotation={-2}
+						/>
+					</div>
 				</div>
 
-				<div class="aethra-seal" data-stamp>
+				<div class="aethra-seal" data-stamp aria-hidden="true">
 					<svg viewBox="0 0 160 160" class="seal-svg">
 						<defs>
 							<path
@@ -201,6 +241,12 @@ const marqueeItems = [
 						<span class="seal-big">64</span>
 						<span class="seal-bottom">REKAN</span>
 					</div>
+				</div>
+
+				<div class="deck-controls">
+					<span class="deck-counter" data-deck-counter>01 / 03</span>
+					<button type="button" class="chip" data-deck-shuffle>Balik Foto ↻</button>
+					<button type="button" class="chip" data-deck-reset hidden>Rapikan</button>
 				</div>
 			</div>
 		</div>
@@ -242,6 +288,9 @@ const marqueeItems = [
 					<br />
 					Keluarga Aethra 03
 				</p>
+				<div class="rail-meter" aria-hidden="true">
+					<span class="rail-meter-bar" data-manifesto-bar></span>
+				</div>
 			</div>
 
 			<div class="manifesto-content">
@@ -258,7 +307,7 @@ const marqueeItems = [
 		</div>
 	</section>
 
-	<!-- 4. TIGA PILAR -->
+	<!-- 4. TIGA PILAR INTERAKTIF -->
 	<section class="motto-section" aria-labelledby="motto-judul">
 		<div class="container">
 			<div class="section-head">
@@ -267,39 +316,133 @@ const marqueeItems = [
 					Tiga Kata yang Merangkum <em>Perjalanan Kita</em>
 				</h2>
 				<p class="section-desc">
-					Nilai yang menjadi pegangan selama masa bakti dan akan terus kita bawa ke depan.
+					Pilih tiap pilar di kiri untuk melihat cuplikan langsung isi arsip Aethra 03.
 				</p>
 			</div>
 
-			<div class="motto-table">
-				{
-					motto.map((m) => (
-						<article class="motto-row" data-motto>
-							<div class="motto-meta">
-								<span class="motto-bab">{m.bab}</span>
-								<span class="motto-no">{m.no}</span>
-							</div>
-							<div class="motto-main">
-								<h3 class="motto-word">{m.kata}</h3>
-								<p class="motto-desc">{m.isi}</p>
-							</div>
-							<div class="motto-action">
-								{m.href ? (
-									<a class="btn btn-secondary btn-sm" href={m.href}>
-										{m.label} →
-									</a>
-								) : (
-									<span class="soon-pill">{m.label} Hadir</span>
-								)}
-							</div>
-						</article>
-					))
-				}
+			<div class="pilar-grid">
+				<div class="pilar-list" role="tablist" aria-label="Pilar Cipta Rasa Karsa">
+					{
+						pilars.map((p, idx) => (
+							<button
+								type="button"
+								class:list={['pilar-btn', { 'is-active': idx === 0 }]}
+								data-pilar-btn={idx}
+								data-cursor="Pilih"
+								aria-pressed={idx === 0 ? 'true' : 'false'}
+							>
+								<div class="pilar-btn-meta">
+									<span class="pilar-bab">{p.bab}</span>
+									<span class="pilar-no">{p.no}</span>
+								</div>
+								<div class="pilar-btn-body">
+									<span class="pilar-word">{p.kata}</span>
+									<span class="pilar-summary">{p.ringkas}</span>
+								</div>
+								<span class="pilar-arrow" aria-hidden="true">
+									→
+								</span>
+							</button>
+						))
+					}
+				</div>
+
+				<div class="pilar-stage">
+					<!-- Panel 0: Cipta -->
+					<div class="pilar-panel" data-pilar-panel="0">
+						<div class="panel-top">
+							<span class="panel-badge">01 · CIPTA</span>
+							<span class="panel-stat">{kegiatan.length} Agenda Kegiatan</span>
+						</div>
+						<div class="panel-visual" aria-hidden="true">
+							<svg viewBox="0 0 280 120" fill="none">
+								<rect
+									x="22"
+									y="20"
+									width="104"
+									height="78"
+									rx="6"
+									fill="#f1f5f9"
+									stroke="#cbd5e1"
+									transform="rotate(-4 74 59)"
+								></rect>
+								<rect
+									x="136"
+									y="18"
+									width="120"
+									height="84"
+									rx="6"
+									fill="#0b1628"
+									transform="rotate(3 196 60)"
+								></rect>
+								<circle cx="176" cy="46" r="10" fill="#cfa144"></circle>
+								<path
+									d="M148 86 L176 58 L198 78 L216 64 L242 86"
+									stroke="#ffffff"
+									stroke-width="1.5"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								></path>
+							</svg>
+						</div>
+						<h3 class="panel-title">Karya & Dokumentasi Visual</h3>
+						<p class="panel-desc">
+							{
+								contohKegiatan
+									? `Terbaru di arsip: "${contohKegiatan.data.judul}" — ${contohKegiatan.data.deskripsi ?? 'Dokumentasi kegiatan angkatan.'}`
+									: 'Rekam jejak foto dan video kegiatan bersama selama masa bakti.'
+							}
+						</p>
+						<a class="btn btn-primary btn-sm" href="/cipta">Buka Galeri Cipta →</a>
+					</div>
+
+					<!-- Panel 1: Rasa -->
+					<div class="pilar-panel" data-pilar-panel="1" hidden>
+						<div class="panel-top">
+							<span class="panel-badge">02 · RASA</span>
+							<span class="panel-stat">{kenangan.length} Catatan Kenangan</span>
+						</div>
+						<div class="panel-quote-box">
+							<p class="panel-quote">
+								“{contohKenangan?.data.teks ?? 'Cerita kecil yang membuat masa magang tak terlupakan.'}”
+							</p>
+							<span class="panel-quote-author">
+								— {contohKenangan?.data.nama ?? 'Rekan Aethra 03'}
+							</span>
+						</div>
+						<h3 class="panel-title">Cerita & Pesan Antarteman</h3>
+						<p class="panel-desc">
+							Kumpulan kisah spontan, tawa di sela pekerjaan, dan pesan hangat dari rekan-rekan
+							Aethra 03.
+						</p>
+						<a class="btn btn-primary btn-sm" href="/rasa">Baca Jejak Rasa →</a>
+					</div>
+
+					<!-- Panel 2: Karsa -->
+					<div class="pilar-panel" data-pilar-panel="2" hidden>
+						<div class="panel-top">
+							<span class="panel-badge">03 · KARSA</span>
+							<span class="panel-stat">64 Titik Nusantara</span>
+						</div>
+						<div class="panel-crest-box" aria-hidden="true">
+							<span class="crest-star">✦</span>
+							<p class="crest-line">
+								Membawa pulang ilmu, jejaring, dan semangat pengabdian ke 64 titik Nusantara.
+							</p>
+						</div>
+						<h3 class="panel-title">Tekad & Kebersamaan Angkatan</h3>
+						<p class="panel-desc">
+							Setiap rekan pulang ke daerah masing-masing dengan cerita dan ikatan yang tetap
+							terhubung di sini.
+						</p>
+						<a class="btn btn-primary btn-sm" href="/rasi">Kenali 64 Rekan →</a>
+					</div>
+				</div>
 			</div>
 		</div>
 	</section>
 
-	<!-- 5. MOSAIK 64 REKAN -->
+	<!-- 5. MOSAIK 64 REKAN INTERAKTIF -->
 	<section class="mosaic-section" data-sheet aria-labelledby="mosaic-judul">
 		<div class="container">
 			<div class="mosaic-head">
@@ -309,7 +452,7 @@ const marqueeItems = [
 						Enam Puluh Empat Wajah, <em>Satu Rasi</em>
 					</h2>
 					<p class="section-desc">
-						Setiap petak mewakili satu nama dan satu cerita dari berbagai penjuru Indonesia.
+						Cari, saring, atau klik petak mana saja untuk membuka kartu profil anggota Aethra 03.
 					</p>
 				</div>
 				<div class="mosaic-status">
@@ -319,6 +462,30 @@ const marqueeItems = [
 			</div>
 
 			<div class="mosaic-frame">
+				<div class="mosaic-toolbar">
+					<div class="mosaic-filters">
+						<button type="button" class="chip is-active" data-mosaic-filter="all">
+							Semua (64)
+						</button>
+						<button type="button" class="chip" data-mosaic-filter="filled">
+							Terisi ({peserta.length})
+						</button>
+						<button type="button" class="chip" data-mosaic-wave data-cursor="Mainkan">
+							Gelombang ✦
+						</button>
+					</div>
+					<div class="mosaic-search-wrap">
+						<label class="sr-only" for="mosaic-search">Cari rekan di mosaik 64</label>
+						<input
+							id="mosaic-search"
+							type="search"
+							class="search-field"
+							placeholder="Cari nama atau daerah..."
+							data-mosaic-search
+						/>
+					</div>
+				</div>
+
 				<div class="mosaic-spotlight" aria-live="polite">
 					<div class="spotlight-info">
 						<span class="spotlight-no" data-spotlight-no>#{spotlightAwal.no}</span>
@@ -327,12 +494,15 @@ const marqueeItems = [
 							<span class="spotlight-meta" data-spotlight-meta>{spotlightAwal.meta}</span>
 						</div>
 					</div>
-					<a class="spotlight-link" href="/rasi">Buka Rasi Aethra →</a>
+					<div class="spotlight-actions">
+						<button type="button" class="chip" data-spotlight-open>Buka Kartu →</button>
+						<a class="spotlight-link" href="/rasi">Direktori Penuh</a>
+					</div>
 				</div>
 
 				<div class="mosaic-grid" role="list" aria-label="Kisi 64 rekan Aethra 03">
 					{
-						kontakSheet.map((item) => (
+						kontakSheet.map((item, idx) => (
 							<div role="listitem">
 								<button
 									type="button"
@@ -340,9 +510,13 @@ const marqueeItems = [
 										'mosaic-tile',
 										{ 'is-filled': item.tercatat, 'is-active': item.no === spotlightAwal.no },
 									]}
+									data-index={idx}
 									data-no={item.no}
 									data-nama={item.nama}
 									data-meta={item.meta}
+									data-filled={item.tercatat ? '1' : '0'}
+									data-search={`${item.nama} ${item.meta} ${item.kalimat ?? ''}`.toLowerCase()}
+									data-cursor="Lihat"
 									aria-label={`Slot ${item.no}: ${item.nama}`}
 								>
 									<span class="tile-no">{item.no}</span>
@@ -364,10 +538,10 @@ const marqueeItems = [
 
 				<div class="mosaic-footer">
 					<p class="mosaic-hint">
-						Sentuh atau klik tiap petak untuk melihat catatan slot. Potret dan profil lengkap
-						terhimpun di halaman Rasi Aethra.
+						Arahkan atau ketuk petak untuk pratinjau cepat; klik petak untuk membuka kartu profil
+						lengkap.
 					</p>
-					<a class="btn btn-primary" href="/rasi">Jelajahi Semua Profil →</a>
+					<a class="btn btn-primary" href="/rasi" data-magnetic>Jelajahi Semua Profil →</a>
 				</div>
 			</div>
 		</div>
@@ -389,7 +563,7 @@ const marqueeItems = [
 			<div class="index-grid">
 				{
 					babArsip.map((bab) => (
-						<a class="index-card" href={bab.href} data-card>
+						<a class="index-card" href={bab.href} data-card data-tilt data-cursor="Buka">
 							<div class="card-illus" aria-hidden="true">
 								{bab.id === 'rasi' ? (
 									<svg viewBox="0 0 180 76" fill="none">
@@ -469,22 +643,189 @@ const marqueeItems = [
 			</div>
 		</div>
 	</section>
+
+	<MemberModal />
+	<script type="application/json" id="aethra-members-data" set:html={serializedMembers} />
 </BaseLayout>
 
 <script>
+	import { gsap } from 'gsap';
+	import { Draggable } from 'gsap/Draggable';
 	import { initMotion } from '../scripts/motion';
+	import { initTiltCards } from '../scripts/interactions';
+	import { setupMemberModal, type MemberItem } from '../scripts/memberModal';
 
-	// Interaksi Spotlight Mosaik 64 (berjalan di semua preferensi gerak)
+	gsap.registerPlugin(Draggable);
+
+	const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+	// 1. Meja Polaroid Interaktif (Draggable & Shuffleable)
+	const deckCards = Array.from(document.querySelectorAll<HTMLElement>('[data-deck-card]'));
+	const counterEl = document.querySelector<HTMLElement>('[data-deck-counter]');
+	const shuffleBtn = document.querySelector<HTMLButtonElement>('[data-deck-shuffle]');
+	const resetBtn = document.querySelector<HTMLButtonElement>('[data-deck-reset]');
+
+	if (deckCards.length > 0) {
+		const order = deckCards.map((_, i) => i);
+		const ranks = [
+			{ x: 0, y: 0, scale: 1, zIndex: 3 },
+			{ x: 24, y: 20, scale: 0.96, zIndex: 2 },
+			{ x: -18, y: 38, scale: 0.92, zIndex: 1 },
+		];
+
+		const updateCounter = () => {
+			if (!counterEl) return;
+			const activeNum = String((order[0] ?? 0) + 1).padStart(2, '0');
+			const totalNum = String(deckCards.length).padStart(2, '0');
+			counterEl.textContent = `${activeNum} / ${totalNum}`;
+		};
+
+		const layoutDeck = (animate = true) => {
+			order.forEach((cardIdx, rank) => {
+				const el = deckCards[cardIdx];
+				const pose = ranks[rank] ?? ranks[ranks.length - 1]!;
+				if (!el) return;
+				el.style.zIndex = String(pose.zIndex);
+				if (animate && !reducedMotion) {
+					gsap.to(el, {
+						x: pose.x,
+						y: pose.y,
+						scale: pose.scale,
+						rotation: 0,
+						opacity: 1,
+						duration: 0.45,
+						ease: 'power3.out',
+					});
+				} else {
+					gsap.set(el, {
+						x: pose.x,
+						y: pose.y,
+						scale: pose.scale,
+						rotation: 0,
+						opacity: 1,
+					});
+				}
+			});
+			updateCounter();
+		};
+
+		let shuffling = false;
+		const shuffleDeck = () => {
+			if (shuffling || order.length < 2) return;
+			if (reducedMotion) {
+				const first = order.shift()!;
+				order.push(first);
+				layoutDeck(false);
+				if (resetBtn) resetBtn.hidden = true;
+				return;
+			}
+			shuffling = true;
+			const frontEl = deckCards[order[0]!];
+			if (!frontEl) {
+				shuffling = false;
+				return;
+			}
+			gsap.to(frontEl, {
+				x: 95,
+				rotation: 8,
+				opacity: 0.72,
+				duration: 0.22,
+				ease: 'power2.in',
+				onComplete: () => {
+					const first = order.shift()!;
+					order.push(first);
+					layoutDeck(true);
+					if (resetBtn) resetBtn.hidden = true;
+					shuffling = false;
+				},
+			});
+		};
+
+		layoutDeck(false);
+
+		shuffleBtn?.addEventListener('click', shuffleDeck);
+		resetBtn?.addEventListener('click', () => {
+			layoutDeck(true);
+			resetBtn.hidden = true;
+		});
+
+		if (!reducedMotion) {
+			Draggable.create(deckCards, {
+				bounds: '.hero-desk',
+				onPress() {
+					(this.target as HTMLElement).style.zIndex = '20';
+				},
+				onDrag() {
+					if (resetBtn) resetBtn.hidden = false;
+				},
+				onClick() {
+					shuffleDeck();
+				},
+			});
+		} else {
+			deckCards.forEach((card) => card.addEventListener('click', shuffleDeck));
+		}
+	}
+
+	// 2. Switcher Tiga Pilar
+	const pilarButtons = document.querySelectorAll<HTMLButtonElement>('[data-pilar-btn]');
+	const pilarPanels = document.querySelectorAll<HTMLElement>('[data-pilar-panel]');
+	let activePilar = '0';
+
+	const setPilar = (idx: string) => {
+		if (idx === activePilar) return;
+		activePilar = idx;
+
+		pilarButtons.forEach((btn) => {
+			const isActive = btn.dataset.pilarBtn === idx;
+			btn.classList.toggle('is-active', isActive);
+			btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+		});
+
+		pilarPanels.forEach((panel) => {
+			const match = panel.dataset.pilarPanel === idx;
+			panel.hidden = !match;
+			if (match && !reducedMotion) {
+				gsap.fromTo(panel, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.28, ease: 'power2.out' });
+			}
+		});
+	};
+
+	pilarButtons.forEach((btn) => {
+		const idx = btn.dataset.pilarBtn ?? '0';
+		btn.addEventListener('click', () => setPilar(idx));
+		btn.addEventListener('mouseenter', () => setPilar(idx));
+		btn.addEventListener('focus', () => setPilar(idx));
+	});
+
+	// 3. Mosaik 64 Interaktif + Filter/Search/Wave + Modal Profil
+	const membersDataEl = document.getElementById('aethra-members-data');
+	const members: MemberItem[] = membersDataEl?.textContent ? JSON.parse(membersDataEl.textContent) : [];
+	const modal = setupMemberModal(members);
+
 	const spotlightNo = document.querySelector<HTMLElement>('[data-spotlight-no]');
 	const spotlightName = document.querySelector<HTMLElement>('[data-spotlight-name]');
 	const spotlightMeta = document.querySelector<HTMLElement>('[data-spotlight-meta]');
-	const tiles = document.querySelectorAll<HTMLButtonElement>('.mosaic-tile');
+	const spotlightOpenBtn = document.querySelector<HTMLButtonElement>('[data-spotlight-open]');
+	const tiles = Array.from(document.querySelectorAll<HTMLButtonElement>('.mosaic-tile'));
+	const mosaicFilterBtns = document.querySelectorAll<HTMLButtonElement>('[data-mosaic-filter]');
+	const mosaicSearchInput = document.querySelector<HTMLInputElement>('[data-mosaic-search]');
+	const waveBtn = document.querySelector<HTMLButtonElement>('[data-mosaic-wave]');
+
+	let currentSpotlightIndex = Math.max(
+		0,
+		members.findIndex((m) => m.tercatat),
+	);
+	let activeMosaicFilter = 'all';
+	let activeSearch = '';
 
 	const setSpotlight = (tile: HTMLButtonElement) => {
+		const idx = Number(tile.dataset.index ?? 0);
 		const no = tile.dataset.no ?? '';
 		const nama = tile.dataset.nama ?? '';
 		const meta = tile.dataset.meta ?? '';
 
+		currentSpotlightIndex = idx;
 		if (spotlightNo) spotlightNo.textContent = `#${no}`;
 		if (spotlightName) spotlightName.textContent = nama;
 		if (spotlightMeta) spotlightMeta.textContent = meta;
@@ -492,54 +833,92 @@ const marqueeItems = [
 		tiles.forEach((el) => el.classList.toggle('is-active', el === tile));
 	};
 
+	const applyMosaicFilters = () => {
+		const q = activeSearch.trim().toLowerCase();
+		tiles.forEach((tile) => {
+			const filled = tile.dataset.filled === '1';
+			const text = tile.dataset.search ?? '';
+			const filterPass = activeMosaicFilter === 'all' || filled;
+			const searchPass = !q || text.includes(q);
+			const visible = filterPass && searchPass;
+
+			tile.classList.toggle('is-dimmed', !visible);
+			tile.classList.toggle('is-match', Boolean(q && visible));
+		});
+	};
+
 	tiles.forEach((tile) => {
 		tile.addEventListener('mouseenter', () => setSpotlight(tile));
 		tile.addEventListener('focus', () => setSpotlight(tile));
-		tile.addEventListener('click', () => setSpotlight(tile));
+		tile.addEventListener('click', () => {
+			setSpotlight(tile);
+			modal.openAt(Number(tile.dataset.index ?? 0));
+		});
 	});
 
-	initMotion((gsap) => {
-		gsap.from('[data-rise]', {
-			y: 28,
+	spotlightOpenBtn?.addEventListener('click', () => {
+		modal.openAt(currentSpotlightIndex);
+	});
+
+	mosaicFilterBtns.forEach((btn) => {
+		btn.addEventListener('click', () => {
+			activeMosaicFilter = btn.dataset.mosaicFilter ?? 'all';
+			mosaicFilterBtns.forEach((b) => b.classList.toggle('is-active', b === btn));
+			applyMosaicFilters();
+		});
+	});
+
+	mosaicSearchInput?.addEventListener('input', () => {
+		activeSearch = mosaicSearchInput.value;
+		applyMosaicFilters();
+	});
+
+	waveBtn?.addEventListener('click', () => {
+		if (reducedMotion) return;
+		gsap.fromTo(
+			tiles,
+			{ scale: 1 },
+			{
+				scale: 1.09,
+				duration: 0.24,
+				yoyo: true,
+				repeat: 1,
+				ease: 'power2.inOut',
+				stagger: { amount: 0.55, grid: [8, 8], from: 'center' },
+			},
+		);
+	});
+
+	// 4. Tilt Cards & Animasi Scroll
+	initTiltCards('[data-tilt]');
+
+	initMotion((gsapInstance) => {
+		gsapInstance.from('[data-rise]', {
+			y: 26,
 			opacity: 0,
 			duration: 0.85,
 			ease: 'power3.out',
-			stagger: 0.09,
+			stagger: 0.08,
 		});
 
-		gsap.from('.stack-item', {
-			y: 50,
+		gsapInstance.from('.polaroid-deck', {
+			y: 36,
 			opacity: 0,
-			duration: 1.1,
+			duration: 1,
 			ease: 'power3.out',
-			stagger: 0.18,
-			delay: 0.25,
+			delay: 0.2,
 		});
 
-		gsap.from('[data-stamp]', {
+		gsapInstance.from('[data-stamp]', {
 			scale: 0.6,
 			rotation: -24,
 			opacity: 0,
 			duration: 0.9,
 			ease: 'back.out(1.5)',
-			delay: 0.55,
+			delay: 0.45,
 		});
 
-		document.querySelectorAll<HTMLElement>('[data-float]').forEach((el) => {
-			const speed = Number(el.dataset.float || 0);
-			gsap.to(el, {
-				yPercent: -24 * speed,
-				ease: 'none',
-				scrollTrigger: {
-					trigger: '[data-hero]',
-					start: 'top top',
-					end: 'bottom top',
-					scrub: true,
-				},
-			});
-		});
-
-		gsap.fromTo(
+		gsapInstance.fromTo(
 			'.mw',
 			{ color: '#cbd5e1' },
 			{
@@ -555,18 +934,22 @@ const marqueeItems = [
 			},
 		);
 
-		gsap.utils.toArray<HTMLElement>('[data-motto]').forEach((row) => {
-			gsap.from(row.children, {
-				y: 24,
-				opacity: 0,
-				duration: 0.75,
-				ease: 'power3.out',
-				stagger: 0.07,
-				scrollTrigger: { trigger: row, start: 'top 86%' },
-			});
-		});
+		gsapInstance.fromTo(
+			'[data-manifesto-bar]',
+			{ scaleX: 0 },
+			{
+				scaleX: 1,
+				ease: 'none',
+				scrollTrigger: {
+					trigger: '[data-manifesto]',
+					start: 'top 78%',
+					end: 'bottom 48%',
+					scrub: true,
+				},
+			},
+		);
 
-		gsap.from('.mosaic-tile', {
+		gsapInstance.from('.mosaic-tile', {
 			opacity: 0,
 			scale: 0.9,
 			duration: 0.45,
@@ -578,8 +961,8 @@ const marqueeItems = [
 			},
 		});
 
-		gsap.from('[data-card]', {
-			y: 36,
+		gsapInstance.from('[data-card]', {
+			y: 34,
 			opacity: 0,
 			duration: 0.75,
 			ease: 'power3.out',
@@ -698,51 +1081,61 @@ const marqueeItems = [
 		color: var(--navy);
 	}
 
-	/* Visual Polaroid Kanan */
-	.hero-visual {
+	/* Meja Polaroid Interaktif */
+	.hero-desk {
 		position: relative;
 		display: flex;
-		justify-content: center;
+		flex-direction: column;
 		align-items: center;
-		min-height: 27rem;
+		gap: 1.5rem;
+		padding-block: 1rem 0.5rem;
 	}
 
-	.polaroid-stack {
+	.polaroid-deck {
 		position: relative;
-		width: 100%;
-		max-width: 26rem;
-		height: 25rem;
+		width: min(21rem, 100%);
+		height: 22.5rem;
 	}
 
-	.stack-item {
+	.deck-card {
 		position: absolute;
-		width: min(19.5rem, 78%);
-	}
-
-	.item-main {
-		top: 0.5rem;
+		top: 0.75rem;
 		left: 0;
-		z-index: 2;
+		width: min(19.5rem, 90%);
+		cursor: grab;
+		user-select: none;
+		touch-action: none;
 	}
 
-	.item-back {
-		top: 4.5rem;
-		right: 0;
-		z-index: 1;
+	.deck-card:active {
+		cursor: grabbing;
 	}
 
-	.stack-item:hover {
-		z-index: 10;
+	.deck-controls {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		flex-wrap: wrap;
+		justify-content: center;
+		position: relative;
+		z-index: 6;
+	}
+
+	.deck-counter {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		color: var(--ink-faint);
+		padding-right: 0.35rem;
 	}
 
 	/* Segel Aethra */
 	.aethra-seal {
 		position: absolute;
-		bottom: -0.75rem;
-		left: -0.5rem;
-		z-index: 5;
-		width: 8.2rem;
-		height: 8.2rem;
+		bottom: 3rem;
+		left: -0.25rem;
+		z-index: 8;
+		width: 8rem;
+		height: 8rem;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -824,6 +1217,10 @@ const marqueeItems = [
 		animation: aethra-marquee 32s linear infinite;
 	}
 
+	.marquee-band:hover .marquee-track {
+		animation-play-state: paused;
+	}
+
 	.marquee-list {
 		display: flex;
 		align-items: center;
@@ -844,6 +1241,11 @@ const marqueeItems = [
 		text-transform: uppercase;
 		color: var(--ink-faint);
 		white-space: nowrap;
+		transition: color 0.2s ease;
+	}
+
+	.marquee-item:hover {
+		color: var(--navy);
 	}
 
 	.marquee-star {
@@ -885,7 +1287,24 @@ const marqueeItems = [
 		font-size: 0.9rem;
 		color: var(--ink-faint);
 		line-height: 1.6;
-		margin: 0;
+		margin: 0 0 1.25rem;
+	}
+
+	.rail-meter {
+		width: 8rem;
+		height: 2px;
+		background: var(--border);
+		border-radius: 99px;
+		overflow: hidden;
+	}
+
+	.rail-meter-bar {
+		display: block;
+		width: 100%;
+		height: 100%;
+		background: var(--navy);
+		transform-origin: 0 50%;
+		transform: scaleX(1);
 	}
 
 	.manifesto-quote {
@@ -929,7 +1348,7 @@ const marqueeItems = [
 	}
 
 	/* ========================================================
-     4. TIGA PILAR
+     4. TIGA PILAR INTERAKTIF
      ======================================================== */
 	.motto-section {
 		background: var(--bg);
@@ -953,81 +1372,208 @@ const marqueeItems = [
 		margin: 0;
 	}
 
-	.motto-table {
+	.pilar-grid {
+		display: grid;
+		grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+		gap: 2.5rem;
+		align-items: start;
+	}
+
+	.pilar-list {
 		border-top: 1.5px solid var(--navy);
 	}
 
-	.motto-row {
-		display: grid;
-		grid-template-columns: 8.5rem minmax(0, 1fr) auto;
-		align-items: center;
-		gap: 1.5rem 2.5rem;
-		padding-block: clamp(1.6rem, 3.5vw, 2.5rem);
+	.pilar-btn {
+		width: 100%;
+		text-align: left;
+		background: transparent;
+		border: none;
 		border-bottom: 1px solid var(--border);
+		padding: 1.5rem 1rem;
+		display: grid;
+		grid-template-columns: 6.5rem minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 1.25rem;
+		cursor: pointer;
+		font-family: inherit;
 		transition: background-color 0.2s ease;
 	}
 
-	.motto-row:hover {
-		background-color: var(--surface);
+	.pilar-btn:hover,
+	.pilar-btn.is-active {
+		background: var(--surface);
 	}
 
-	.motto-meta {
+	.pilar-btn-meta {
 		display: flex;
 		flex-direction: column;
 		gap: 0.2rem;
 	}
 
-	.motto-bab {
-		font-size: 0.65rem;
+	.pilar-bab {
+		font-size: 0.62rem;
 		font-weight: 600;
 		letter-spacing: 0.14em;
 		color: var(--gold);
 	}
 
-	.motto-no {
+	.pilar-no {
 		font-family: var(--font-serif);
-		font-size: 1.75rem;
+		font-size: 1.65rem;
 		font-weight: 600;
 		color: var(--navy);
 		line-height: 1;
 	}
 
-	.motto-main {
-		display: grid;
-		gap: 0.35rem;
+	.pilar-btn-body {
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
 	}
 
-	.motto-word {
+	.pilar-word {
 		font-family: var(--font-serif);
 		font-weight: 600;
-		font-size: clamp(2.2rem, 5.5vw, 3.8rem);
+		font-size: clamp(2rem, 4vw, 3rem);
 		line-height: 1;
-		margin: 0;
 		color: var(--navy);
+		transition: color 0.2s ease;
 	}
 
-	.motto-desc {
-		font-size: 1rem;
+	.pilar-btn.is-active .pilar-word {
+		color: var(--gold);
+	}
+
+	.pilar-summary {
+		font-size: 0.92rem;
 		color: var(--ink-muted);
+		line-height: 1.5;
+	}
+
+	.pilar-arrow {
+		font-size: 1.1rem;
+		color: var(--ink-faint);
+		transition:
+			transform 0.2s ease,
+			color 0.2s ease;
+	}
+
+	.pilar-btn.is-active .pilar-arrow,
+	.pilar-btn:hover .pilar-arrow {
+		transform: translateX(4px);
+		color: var(--navy);
+	}
+
+	.pilar-stage {
+		background: #ffffff;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-lg);
+		padding: clamp(1.5rem, 3.5vw, 2.25rem);
+		box-shadow: 0 22px 48px -22px rgba(11, 22, 40, 0.09);
+		position: sticky;
+		top: 5.5rem;
+	}
+
+	.panel-top {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 0.75rem;
+		padding-bottom: 1rem;
+		margin-bottom: 1.25rem;
+		border-bottom: 1px solid var(--border);
+	}
+
+	.panel-badge {
+		font-size: 0.7rem;
+		font-weight: 600;
+		letter-spacing: 0.14em;
+		color: var(--gold);
+	}
+
+	.panel-stat {
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
+		color: var(--ink-faint);
+	}
+
+	.panel-visual {
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		padding: 0.75rem;
+		margin-bottom: 1.35rem;
+	}
+
+	.panel-visual svg {
+		display: block;
+		width: 100%;
+		height: 7rem;
+	}
+
+	.panel-quote-box {
+		background: var(--surface);
+		border-left: 3px solid var(--gold);
+		border-radius: 0 var(--radius) var(--radius) 0;
+		padding: 1.15rem 1.25rem;
+		margin-bottom: 1.35rem;
+	}
+
+	.panel-quote {
+		font-family: var(--font-serif);
+		font-style: italic;
+		font-size: 1.25rem;
+		line-height: 1.4;
+		color: var(--navy);
+		margin: 0 0 0.5rem;
+	}
+
+	.panel-quote-author {
+		font-size: 0.78rem;
+		font-weight: 600;
+		color: var(--ink-faint);
+	}
+
+	.panel-crest-box {
+		background: var(--navy);
+		color: #ffffff;
+		border-radius: var(--radius);
+		padding: 1.4rem 1.25rem;
+		margin-bottom: 1.35rem;
+		text-align: center;
+	}
+
+	.crest-star {
+		display: inline-block;
+		color: var(--gold-bright);
+		font-size: 1.15rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.crest-line {
+		font-family: var(--font-serif);
+		font-style: italic;
+		font-size: 1.2rem;
+		line-height: 1.38;
 		margin: 0;
-		max-width: 36rem;
+		color: rgba(255, 255, 255, 0.92);
+	}
+
+	.panel-title {
+		font-size: 1.65rem;
+		margin: 0 0 0.5rem;
+	}
+
+	.panel-desc {
+		font-size: 0.94rem;
+		color: var(--ink-muted);
+		line-height: 1.6;
+		margin: 0 0 1.4rem;
 	}
 
 	.btn-sm {
 		padding: 0.62rem 1.15rem;
 		font-size: 0.85rem;
-	}
-
-	.soon-pill {
-		display: inline-block;
-		font-size: 0.75rem;
-		font-weight: 500;
-		letter-spacing: 0.06em;
-		color: var(--ink-faint);
-		background: var(--surface);
-		border: 1px solid var(--border);
-		padding: 0.45rem 0.9rem;
-		border-radius: var(--radius-pill);
 	}
 
 	/* ========================================================
@@ -1082,6 +1628,26 @@ const marqueeItems = [
 		box-shadow: 0 20px 50px -24px rgba(11, 22, 40, 0.08);
 	}
 
+	.mosaic-toolbar {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 1rem;
+		flex-wrap: wrap;
+		margin-bottom: 1rem;
+	}
+
+	.mosaic-filters {
+		display: flex;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+	}
+
+	.mosaic-search-wrap {
+		flex: 1 1 14rem;
+		max-width: 18rem;
+	}
+
 	.mosaic-spotlight {
 		display: flex;
 		justify-content: space-between;
@@ -1132,6 +1698,13 @@ const marqueeItems = [
 		color: var(--ink-faint);
 	}
 
+	.spotlight-actions {
+		display: flex;
+		align-items: center;
+		gap: 0.85rem;
+		flex-wrap: wrap;
+	}
+
 	.spotlight-link {
 		font-size: 0.84rem;
 		font-weight: 600;
@@ -1166,7 +1739,7 @@ const marqueeItems = [
 			transform 0.2s ease,
 			border-color 0.2s ease,
 			box-shadow 0.2s ease,
-			background-color 0.2s ease;
+			opacity 0.2s ease;
 	}
 
 	.mosaic-tile:hover {
@@ -1184,6 +1757,15 @@ const marqueeItems = [
 		background: var(--navy);
 		border-color: var(--navy);
 		color: #ffffff;
+	}
+
+	.mosaic-tile.is-dimmed {
+		opacity: 0.22;
+	}
+
+	.mosaic-tile.is-match {
+		border-color: var(--gold-bright);
+		box-shadow: 0 0 0 2px rgba(207, 161, 68, 0.45);
 	}
 
 	.tile-no {
@@ -1258,6 +1840,7 @@ const marqueeItems = [
 	}
 
 	.index-card {
+		position: relative;
 		background: #ffffff;
 		border: 1px solid var(--border);
 		border-radius: var(--radius-lg);
@@ -1266,16 +1849,33 @@ const marqueeItems = [
 		flex-direction: column;
 		text-decoration: none;
 		color: var(--ink);
+		overflow: hidden;
 		transition:
-			transform 0.25s ease,
-			box-shadow 0.25s ease,
-			border-color 0.25s ease;
+			border-color 0.25s ease,
+			box-shadow 0.25s ease;
+	}
+
+	.index-card::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: radial-gradient(
+			360px circle at var(--mx, 50%) var(--my, 50%),
+			rgba(11, 22, 40, 0.04),
+			transparent 70%
+		);
+		opacity: 0;
+		transition: opacity 0.25s ease;
+		pointer-events: none;
 	}
 
 	.index-card:hover {
-		transform: translateY(-4px);
 		border-color: var(--navy);
 		box-shadow: 0 22px 44px -18px rgba(11, 22, 40, 0.12);
+	}
+
+	.index-card:hover::before {
+		opacity: 1;
 	}
 
 	.card-illus {
@@ -1368,12 +1968,11 @@ const marqueeItems = [
 		.hero-layout {
 			grid-template-columns: 1fr;
 		}
-		.hero-visual {
-			min-height: 24rem;
+		.pilar-grid {
+			grid-template-columns: 1fr;
 		}
-		.polaroid-stack {
-			max-width: 24rem;
-			height: 23rem;
+		.pilar-stage {
+			position: static;
 		}
 	}
 
@@ -1382,13 +1981,6 @@ const marqueeItems = [
 			grid-template-columns: 1fr;
 			gap: 1.25rem;
 		}
-		.motto-row {
-			grid-template-columns: 1fr;
-			gap: 1rem;
-		}
-		.motto-action {
-			justify-self: start;
-		}
 	}
 
 	@media (max-width: 600px) {
@@ -1396,27 +1988,35 @@ const marqueeItems = [
 			grid-template-columns: repeat(3, minmax(0, 1fr));
 			gap: 0.75rem;
 		}
-		.hero-visual {
-			min-height: 20rem;
+		.polaroid-deck {
+			max-width: 19rem;
+			height: 19rem;
 		}
-		.polaroid-stack {
-			max-width: 19.5rem;
-			height: 19.5rem;
-		}
-		.stack-item {
-			width: 13.75rem;
-		}
-		.item-back {
-			top: 3.2rem;
+		.deck-card {
+			width: 15.5rem;
 		}
 		.aethra-seal {
-			width: 6.4rem;
-			height: 6.4rem;
-			bottom: -0.4rem;
+			width: 6.2rem;
+			height: 6.2rem;
+			bottom: 2.8rem;
 			left: 0;
 		}
 		.seal-big {
-			font-size: 1.55rem;
+			font-size: 1.5rem;
+		}
+		.pilar-btn {
+			grid-template-columns: 1fr auto;
+			gap: 0.65rem;
+		}
+		.pilar-btn-meta {
+			grid-column: 1 / -1;
+			flex-direction: row;
+			align-items: baseline;
+			gap: 0.6rem;
+		}
+		.mosaic-search-wrap {
+			max-width: 100%;
+			flex-basis: 100%;
 		}
 		.mosaic-grid {
 			gap: 0.28rem;

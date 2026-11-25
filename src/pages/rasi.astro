@@ -1,15 +1,598 @@
 ---
+import { getCollection } from 'astro:content';
+import { Image, getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Placeholder from '../components/Placeholder.astro';
+import MemberModal from '../components/MemberModal.astro';
+import type { MemberItem } from '../scripts/memberModal';
+
+const TOTAL = 64;
+const peserta = (await getCollection('peserta', ({ data }) => data.setuju)).sort((a, b) =>
+	a.data.nama.localeCompare(b.data.nama, 'id'),
+);
+
+const fotoModules = import.meta.glob<{ default: ImageMetadata }>(
+	'../assets/peserta/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}',
+	{ eager: true },
+);
+
+const inisial = (nama: string) =>
+	nama
+		.split(/\s+/)
+		.filter(Boolean)
+		.slice(0, 2)
+		.map((k) => k[0]!.toUpperCase())
+		.join('');
+
+interface SlotCard extends MemberItem {
+	index: number;
+	imageMeta?: ImageMetadata;
+}
+
+const slots: SlotCard[] = await Promise.all(
+	Array.from({ length: TOTAL }, async (_, i) => {
+		const p = peserta[i];
+		const no = String(i + 1).padStart(2, '0');
+		if (!p) {
+			return {
+				index: i,
+				no,
+				inisial: '',
+				nama: `Kursi #${no}`,
+				meta: 'Menunggu profil rekan Aethra 03',
+				tercatat: false,
+			};
+		}
+
+		let imageMeta: ImageMetadata | undefined;
+		let fotoUrl: string | undefined;
+		if (p.data.foto) {
+			const match = Object.entries(fotoModules).find(([path]) => path.endsWith(`/${p.data.foto}`));
+			if (match) {
+				imageMeta = match[1].default;
+				const optimized = await getImage({ src: imageMeta, width: 480, height: 480 });
+				fotoUrl = optimized.src;
+			}
+		}
+
+		const meta = [p.data.divisi, p.data.daerah].filter(Boolean).join(' · ') || 'Anggota Aethra 03';
+		return {
+			index: i,
+			no,
+			inisial: inisial(p.data.nama),
+			nama: p.data.nama,
+			meta,
+			divisi: p.data.divisi,
+			daerah: p.data.daerah,
+			kalimat: p.data.kalimat,
+			pesan: p.data.pesan,
+			fotoUrl,
+			imageMeta,
+			tercatat: true,
+		};
+	}),
+);
+
+const divisiList = Array.from(
+	new Set(peserta.map((p) => p.data.divisi).filter((d): d is string => Boolean(d))),
+).sort((a, b) => a.localeCompare(b, 'id'));
+
+const modalItems: MemberItem[] = slots.map(({ imageMeta: _m, index: _i, ...rest }) => rest);
+const serializedMembers = JSON.stringify(modalItems).replace(/</g, '\\u003c');
 ---
 
 <BaseLayout
 	title="Rasi Aethra"
-	description="Direktori 64 rekan angkatan Aethra 03 Masadagri: profil, asal daerah, dan pesan."
+	description="Direktori interaktif 64 rekan angkatan Aethra 03 Masadagri: profil, asal daerah, divisi, dan pesan kenangan."
 >
-	<Placeholder
-		judul="Rasi Aethra"
-		catatan="Direktori lengkap 64 rekan seperjuangan, asal daerah, dan pesan kenangan sedang disiapkan dalam format buku tahunan interaktif."
-		kode="Bagian 01 · Direktori 64 Rekan"
-	/>
+	<section class="page-head container">
+		<div class="head-copy">
+			<p class="eyebrow">01 — Rasi Aethra</p>
+			<h1>Enam Puluh Empat Wajah, <em>Satu Keluarga</em></h1>
+			<p class="head-desc">
+				Direktori interaktif seluruh rekan Masadagri Batch III. Cari nama, saring penempatan, acak
+				susunan, atau klik kartu mana saja untuk membaca pesan kenangan.
+			</p>
+		</div>
+		<div class="head-stats">
+			<div class="stat-pill">
+				<strong>{peserta.length}</strong>
+				<span>Profil Tercatat</span>
+			</div>
+			<div class="stat-pill">
+				<strong>{TOTAL - peserta.length}</strong>
+				<span>Kursi Menunggu</span>
+			</div>
+		</div>
+	</section>
+
+	<section class="controls-wrap container" aria-label="Filter dan pencarian rekan">
+		<div class="controls-bar">
+			<div class="search-wrap">
+				<label class="sr-only" for="rasi-search">Cari nama, divisi, atau daerah</label>
+				<input
+					id="rasi-search"
+					type="search"
+					class="search-field"
+					placeholder="Cari nama, divisi, daerah, atau kata kunci..."
+					data-rasi-search
+				/>
+			</div>
+
+			<div class="filter-group">
+				<button type="button" class="chip is-active" data-slot-mode="all">
+					Semua 64 Kursi
+				</button>
+				<button type="button" class="chip" data-slot-mode="filled">
+					Profil Terisi ({peserta.length})
+				</button>
+				<button type="button" class="chip" data-rasi-shuffle data-cursor="Acak">
+					Acak Urutan ↻
+				</button>
+			</div>
+		</div>
+
+		{
+			divisiList.length > 0 && (
+				<div class="divisi-bar" role="group" aria-label="Filter berdasarkan divisi">
+					<button type="button" class="chip is-active" data-divisi="all">
+						Semua Divisi
+					</button>
+					{divisiList.map((div) => (
+						<button type="button" class="chip" data-divisi={div}>
+							{div}
+						</button>
+					))}
+				</div>
+			)
+		}
+
+		<p class="result-count" data-rasi-count>Menampilkan {TOTAL} dari {TOTAL} kursi</p>
+	</section>
+
+	<section class="directory container">
+		<div class="rasi-grid" data-rasi-grid>
+			{
+				slots.map((slot) => (
+					<button
+						type="button"
+						class:list={['member-card', { 'is-filled': slot.tercatat, 'is-empty': !slot.tercatat }]}
+						data-rasi-card
+						data-index={slot.index}
+						data-filled={slot.tercatat ? '1' : '0'}
+						data-divisi={slot.divisi ?? ''}
+						data-search={`${slot.nama} ${slot.divisi ?? ''} ${slot.daerah ?? ''} ${slot.kalimat ?? ''} #${slot.no}`.toLowerCase()}
+						data-tilt={slot.tercatat ? '' : undefined}
+						data-cursor={slot.tercatat ? 'Profil' : 'Slot'}
+					>
+						<div class="card-top">
+							<span class="card-no">#{slot.no}</span>
+							{slot.divisi && <span class="card-divisi">{slot.divisi}</span>}
+						</div>
+
+						{slot.tercatat ? (
+							<>
+								<div class="card-avatar">
+									{slot.imageMeta ? (
+										<Image
+											src={slot.imageMeta}
+											width={320}
+											height={320}
+											alt={slot.nama}
+											class="card-photo"
+										/>
+									) : (
+										<span class="card-initials">{slot.inisial}</span>
+									)}
+								</div>
+								<div class="card-info">
+									<h2 class="card-name">{slot.nama}</h2>
+									<p class="card-daerah">{slot.daerah ?? 'Masadagri Batch III'}</p>
+									{slot.kalimat && <p class="card-kalimat">“{slot.kalimat}”</p>}
+								</div>
+								<span class="card-action">Lihat Profil →</span>
+							</>
+						) : (
+							<div class="empty-body">
+								<span class="empty-star" aria-hidden="true">
+									✦
+								</span>
+								<span class="empty-title">{slot.nama}</span>
+								<span class="empty-sub">Menunggu kiriman profil</span>
+							</div>
+						)}
+					</button>
+				))
+			}
+		</div>
+
+		<div class="empty-state" data-rasi-empty hidden>
+			<p>Tidak ada profil atau kursi yang cocok dengan pencarianmu.</p>
+			<button type="button" class="btn btn-secondary" data-rasi-reset>Reset Filter</button>
+		</div>
+	</section>
+
+	<MemberModal />
+	<script type="application/json" id="rasi-members-data" set:html={serializedMembers} />
 </BaseLayout>
+
+<script>
+	import { gsap } from 'gsap';
+	import { Flip } from 'gsap/Flip';
+	import { initMotion } from '../scripts/motion';
+	import { initTiltCards } from '../scripts/interactions';
+	import { setupMemberModal, type MemberItem } from '../scripts/memberModal';
+
+	gsap.registerPlugin(Flip);
+
+	const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	const dataEl = document.getElementById('rasi-members-data');
+	const members: MemberItem[] = dataEl?.textContent ? JSON.parse(dataEl.textContent) : [];
+	const modal = setupMemberModal(members);
+
+	const grid = document.querySelector<HTMLElement>('[data-rasi-grid]');
+	const cards = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-rasi-card]'));
+	const searchInput = document.querySelector<HTMLInputElement>('[data-rasi-search]');
+	const slotModeBtns = document.querySelectorAll<HTMLButtonElement>('[data-slot-mode]');
+	const divisiBtns = document.querySelectorAll<HTMLButtonElement>('[data-divisi]');
+	const shuffleBtn = document.querySelector<HTMLButtonElement>('[data-rasi-shuffle]');
+	const resetBtn = document.querySelector<HTMLButtonElement>('[data-rasi-reset]');
+	const countEl = document.querySelector<HTMLElement>('[data-rasi-count]');
+	const emptyEl = document.querySelector<HTMLElement>('[data-rasi-empty]');
+
+	let slotMode = 'all';
+	let activeDivisi = 'all';
+	let query = '';
+
+	const applyFilters = () => {
+		const q = query.trim().toLowerCase();
+		let shown = 0;
+
+		cards.forEach((card) => {
+			const filled = card.dataset.filled === '1';
+			const divisi = card.dataset.divisi ?? '';
+			const haystack = card.dataset.search ?? '';
+
+			const slotPass = slotMode === 'all' || filled;
+			const divisiPass = activeDivisi === 'all' || divisi === activeDivisi;
+			const searchPass = !q || haystack.includes(q);
+			const visible = slotPass && divisiPass && searchPass;
+
+			card.hidden = !visible;
+			if (visible) shown += 1;
+		});
+
+		if (countEl) {
+			countEl.textContent = `Menampilkan ${shown} dari ${cards.length} kursi`;
+		}
+		if (emptyEl) {
+			emptyEl.hidden = shown > 0;
+		}
+	};
+
+	cards.forEach((card) => {
+		card.addEventListener('click', () => {
+			modal.openAt(Number(card.dataset.index ?? 0));
+		});
+	});
+
+	searchInput?.addEventListener('input', () => {
+		query = searchInput.value;
+		applyFilters();
+	});
+
+	slotModeBtns.forEach((btn) => {
+		btn.addEventListener('click', () => {
+			slotMode = btn.dataset.slotMode ?? 'all';
+			slotModeBtns.forEach((b) => b.classList.toggle('is-active', b === btn));
+			applyFilters();
+		});
+	});
+
+	divisiBtns.forEach((btn) => {
+		btn.addEventListener('click', () => {
+			activeDivisi = btn.dataset.divisi ?? 'all';
+			divisiBtns.forEach((b) => b.classList.toggle('is-active', b === btn));
+			if (activeDivisi !== 'all' && slotMode === 'all') {
+				slotMode = 'filled';
+				slotModeBtns.forEach((b) =>
+					b.classList.toggle('is-active', b.dataset.slotMode === 'filled'),
+				);
+			}
+			applyFilters();
+		});
+	});
+
+	shuffleBtn?.addEventListener('click', () => {
+		if (!grid) return;
+		const current = Array.from(grid.children);
+		const state = !reducedMotion ? Flip.getState(current) : null;
+
+		for (let i = current.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[current[i], current[j]] = [current[j]!, current[i]!];
+		}
+		current.forEach((el) => grid.appendChild(el));
+
+		if (state && !reducedMotion) {
+			Flip.from(state, {
+				duration: 0.5,
+				ease: 'power2.inOut',
+				stagger: 0.008,
+			});
+		}
+	});
+
+	resetBtn?.addEventListener('click', () => {
+		query = '';
+		slotMode = 'all';
+		activeDivisi = 'all';
+		if (searchInput) searchInput.value = '';
+		slotModeBtns.forEach((b) => b.classList.toggle('is-active', b.dataset.slotMode === 'all'));
+		divisiBtns.forEach((b) => b.classList.toggle('is-active', b.dataset.divisi === 'all'));
+		applyFilters();
+	});
+
+	initTiltCards('[data-tilt]');
+
+	initMotion((gsapInstance) => {
+		gsapInstance.from('.member-card:not([hidden])', {
+			y: 22,
+			opacity: 0,
+			duration: 0.45,
+			ease: 'power2.out',
+			stagger: { amount: 0.45, from: 'start' },
+		});
+	});
+</script>
+
+<style>
+	.page-head {
+		padding-top: clamp(3rem, 6vw, 4.5rem);
+		padding-bottom: 2.5rem;
+		border-bottom: 1px solid var(--border);
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-end;
+		gap: 2rem;
+		flex-wrap: wrap;
+	}
+
+	.head-copy {
+		max-width: 38rem;
+	}
+
+	.head-desc {
+		font-size: 1.02rem;
+		color: var(--ink-muted);
+		margin: 0;
+	}
+
+	.head-stats {
+		display: flex;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+	}
+
+	.stat-pill {
+		display: flex;
+		align-items: baseline;
+		gap: 0.5rem;
+		padding: 0.6rem 1.05rem;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-pill);
+		background: var(--surface);
+	}
+
+	.stat-pill strong {
+		font-family: var(--font-serif);
+		font-size: 1.35rem;
+		color: var(--navy);
+		line-height: 1;
+	}
+
+	.stat-pill span {
+		font-size: 0.76rem;
+		font-weight: 500;
+		color: var(--ink-faint);
+	}
+
+	.controls-wrap {
+		padding-top: 2rem;
+		padding-bottom: 1.5rem;
+		display: grid;
+		gap: 1rem;
+	}
+
+	.controls-bar {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 1rem;
+		flex-wrap: wrap;
+	}
+
+	.search-wrap {
+		flex: 1 1 18rem;
+		max-width: 24rem;
+	}
+
+	.filter-group,
+	.divisi-bar {
+		display: flex;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+	}
+
+	.result-count {
+		font-size: 0.82rem;
+		color: var(--ink-faint);
+		margin: 0;
+	}
+
+	.directory {
+		padding-bottom: 3rem;
+	}
+
+	.rasi-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+		gap: 1rem;
+	}
+
+	.member-card {
+		text-align: left;
+		font-family: inherit;
+		background: #ffffff;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-lg);
+		padding: 1.15rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.9rem;
+		cursor: pointer;
+		transition:
+			border-color 0.22s ease,
+			box-shadow 0.22s ease,
+			transform 0.22s ease;
+	}
+
+	.member-card[hidden] {
+		display: none;
+	}
+
+	.member-card.is-filled:hover {
+		border-color: var(--navy);
+		box-shadow: 0 20px 40px -18px rgba(11, 22, 40, 0.14);
+	}
+
+	.member-card.is-empty {
+		background: var(--surface);
+		border-style: dashed;
+		min-height: 11rem;
+		justify-content: space-between;
+	}
+
+	.member-card.is-empty:hover {
+		border-color: var(--navy-soft);
+		background: #ffffff;
+	}
+
+	.card-top {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.card-no {
+		font-family: var(--font-mono);
+		font-size: 0.7rem;
+		color: var(--ink-faint);
+	}
+
+	.card-divisi {
+		font-size: 0.68rem;
+		font-weight: 600;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--gold);
+		background: var(--gold-soft);
+		padding: 0.18rem 0.55rem;
+		border-radius: var(--radius-pill);
+	}
+
+	.card-avatar {
+		width: 4rem;
+		height: 4rem;
+		border-radius: 12px;
+		background: var(--navy);
+		color: #ffffff;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		overflow: hidden;
+	}
+
+	.card-photo {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		display: block;
+	}
+
+	.card-initials {
+		font-family: var(--font-serif);
+		font-size: 1.55rem;
+		font-weight: 600;
+	}
+
+	.card-info {
+		flex: 1;
+	}
+
+	.card-name {
+		font-size: 1.4rem;
+		margin: 0 0 0.2rem;
+		color: var(--navy);
+	}
+
+	.card-daerah {
+		font-size: 0.82rem;
+		color: var(--ink-faint);
+		margin: 0 0 0.55rem;
+	}
+
+	.card-kalimat {
+		font-family: var(--font-serif);
+		font-style: italic;
+		font-size: 1.05rem;
+		line-height: 1.35;
+		color: var(--ink-muted);
+		margin: 0;
+	}
+
+	.card-action {
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: var(--navy);
+		padding-top: 0.65rem;
+		border-top: 1px solid var(--border);
+	}
+
+	.empty-body {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+		flex: 1;
+		gap: 0.3rem;
+		padding-block: 0.75rem;
+	}
+
+	.empty-star {
+		color: var(--border-strong);
+		font-size: 1rem;
+	}
+
+	.empty-title {
+		font-family: var(--font-serif);
+		font-size: 1.15rem;
+		font-weight: 600;
+		color: var(--navy-soft);
+	}
+
+	.empty-sub {
+		font-size: 0.76rem;
+		color: var(--ink-faint);
+	}
+
+	.empty-state {
+		text-align: center;
+		padding: 3rem 1rem;
+		border: 1px dashed var(--border-strong);
+		border-radius: var(--radius-lg);
+		color: var(--ink-muted);
+	}
+</style>

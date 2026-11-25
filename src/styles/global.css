@@ -40,6 +40,12 @@
 	--content-width: 74rem;
 }
 
+@media (prefers-reduced-motion: no-preference) {
+	@view-transition {
+		navigation: auto;
+	}
+}
+
 *,
 *::before,
 *::after {
@@ -120,7 +126,8 @@ a:hover {
 }
 
 a:focus-visible,
-button:focus-visible {
+button:focus-visible,
+input:focus-visible {
 	outline: 2px solid var(--navy);
 	outline-offset: 3px;
 }
@@ -200,6 +207,144 @@ button:focus-visible {
 	width: 1.4rem;
 	height: 1px;
 	background: currentColor;
+}
+
+/* Filter Chips & Kolom Pencarian */
+.chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	padding: 0.48rem 0.95rem;
+	border-radius: var(--radius-pill);
+	border: 1px solid var(--border);
+	background: #ffffff;
+	color: var(--ink-muted);
+	font-family: var(--font-body);
+	font-size: 0.82rem;
+	font-weight: 500;
+	line-height: 1.2;
+	cursor: pointer;
+	transition:
+		background-color 0.2s ease,
+		border-color 0.2s ease,
+		color 0.2s ease,
+		transform 0.2s ease;
+}
+
+.chip:hover {
+	border-color: var(--navy-soft);
+	color: var(--navy);
+	background: var(--surface);
+}
+
+.chip.is-active {
+	background: var(--navy);
+	border-color: var(--navy);
+	color: #ffffff;
+}
+
+.search-field {
+	width: 100%;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-pill);
+	padding: 0.55rem 1rem;
+	font-family: var(--font-body);
+	font-size: 0.88rem;
+	background: var(--surface);
+	color: var(--ink);
+	transition:
+		border-color 0.2s ease,
+		background-color 0.2s ease,
+		box-shadow 0.2s ease;
+}
+
+.search-field::placeholder {
+	color: var(--ink-faint);
+}
+
+.search-field:focus {
+	background: #ffffff;
+	border-color: var(--navy);
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(11, 22, 40, 0.07);
+}
+
+/* Modal Bersama */
+dialog.aethra-dialog {
+	border: 1px solid var(--border);
+	border-radius: 18px;
+	padding: 0;
+	background: #ffffff;
+	color: var(--ink);
+	max-width: 34rem;
+	width: min(100% - 2rem, 34rem);
+	box-shadow: 0 32px 72px -20px rgba(11, 22, 40, 0.24);
+	margin: auto;
+	overflow: visible;
+}
+
+dialog.aethra-dialog::backdrop {
+	background: rgba(11, 22, 40, 0.34);
+	backdrop-filter: blur(6px);
+}
+
+.dialog-panel {
+	padding: clamp(1.4rem, 4vw, 2rem);
+}
+
+/* Kursor Interaktif Desktop */
+.aethra-cursor {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 9999;
+	pointer-events: none;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	border-radius: 999px;
+	border: 1px solid rgba(11, 22, 40, 0.25);
+	background: transparent;
+	transition:
+		width 0.2s ease,
+		height 0.2s ease,
+		padding 0.2s ease,
+		background-color 0.2s ease,
+		border-color 0.2s ease,
+		box-shadow 0.2s ease;
+}
+
+.aethra-cursor-label {
+	display: none;
+	font-family: var(--font-body);
+	font-size: 0.62rem;
+	font-weight: 600;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	white-space: nowrap;
+	color: #ffffff;
+	line-height: 1;
+}
+
+.aethra-cursor.is-labeled {
+	width: auto;
+	height: 28px;
+	padding: 0 0.7rem;
+	background: var(--navy);
+	border-color: var(--navy);
+	box-shadow: 0 10px 24px -8px rgba(11, 22, 40, 0.38);
+}
+
+.aethra-cursor.is-labeled .aethra-cursor-label {
+	display: block;
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+	body.has-cursor .aethra-cursor {
+		display: inline-flex;
+	}
 }
 
 .skip-link {

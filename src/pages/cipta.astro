@@ -1,15 +1,757 @@
 ---
+import { getCollection } from 'astro:content';
+import { Image, getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Placeholder from '../components/Placeholder.astro';
+import Polaroid from '../components/Polaroid.astro';
+
+const kegiatan = (await getCollection('kegiatan')).sort(
+	(a, b) => b.data.tanggal.getTime() - a.data.tanggal.getTime(),
+);
+
+const fotoModules = import.meta.glob<{ default: ImageMetadata }>(
+	'../assets/kegiatan/**/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}',
+	{ eager: true },
+);
+
+const formatTanggal = new Intl.DateTimeFormat('id-ID', {
+	day: '2-digit',
+	month: 'long',
+	year: 'numeric',
+});
+
+interface LightboxSlide {
+	judul: string;
+	tanggal: string;
+	keterangan: string;
+	src?: string;
+}
+
+const lightboxSlides: LightboxSlide[] = [];
+
+const entries = await Promise.all(
+	kegiatan.map(async (k) => {
+		const tahun = String(k.data.tanggal.getFullYear());
+		const tanggalStr = formatTanggal.format(k.data.tanggal);
+
+		const resolvedPhotos = (
+			await Promise.all(
+				k.data.foto.map(async (f) => {
+					const suffix = `/${k.id}/${f.file}`;
+					const match = Object.entries(fotoModules).find(([path]) => path.endsWith(suffix));
+					if (!match) return null;
+					const meta = match[1].default;
+					const large = await getImage({ src: meta, width: 1200 });
+					const slideIndex = lightboxSlides.length;
+					lightboxSlides.push({
+						judul: k.data.judul,
+						tanggal: tanggalStr,
+						keterangan: f.keterangan ?? k.data.judul,
+						src: large.src,
+					});
+					return {
+						meta,
+						keterangan: f.keterangan ?? k.data.judul,
+						slideIndex,
+					};
+				}),
+			)
+		).filter((item): item is NonNullable<typeof item> => item !== null);
+
+		let previewSlideIndex: number | undefined;
+		if (resolvedPhotos.length === 0) {
+			previewSlideIndex = lightboxSlides.length;
+			lightboxSlides.push({
+				judul: k.data.judul,
+				tanggal: tanggalStr,
+				keterangan: k.data.deskripsi ?? 'Dokumentasi foto sedang dihimpun oleh tim kurator.',
+			});
+		}
+
+		return {
+			id: k.id,
+			judul: k.data.judul,
+			tahun,
+			tanggalStr,
+			deskripsi: k.data.deskripsi ?? '',
+			photos: resolvedPhotos,
+			videos: k.data.video,
+			previewSlideIndex,
+			hasPhoto: resolvedPhotos.length > 0,
+			hasVideo: k.data.video.length > 0,
+		};
+	}),
+);
+
+const years = Array.from(new Set(entries.map((e) => e.tahun))).sort((a, b) => b.localeCompare(a));
+const serializedSlides = JSON.stringify(lightboxSlides).replace(/</g, '\\u003c');
 ---
 
 <BaseLayout
 	title="Galeri Cipta"
-	description="Dokumentasi karya, kegiatan, dan proyek bersama peserta Aethra 03 Masadagri."
+	description="Galeri foto, dokumentasi kegiatan, dan arsip karya bersama angkatan Aethra 03 Masadagri."
 >
-	<Placeholder
-		judul="Galeri Cipta"
-		catatan="Dokumentasi kegiatan dan karya bersama sedang dihimpun ke dalam lembar buku tahunan digital. Segera hadir untuk kita semua."
-		kode="Bagian 03 · Galeri Kegiatan"
-	/>
+	<section class="page-head container">
+		<div class="head-copy">
+			<p class="eyebrow">03 — Galeri Cipta</p>
+			<h1>Dokumentasi Kegiatan & <em>Karya Bersama</em></h1>
+			<p class="head-desc">
+				Rekam visual perjalanan angkatan Aethra 03: mulai dari kegiatan resmi, kolaborasi antar
+				divisi, hingga momen santai setelah jam dinas.
+			</p>
+		</div>
+		<div class="head-stats">
+			<div class="stat-pill">
+				<strong>{entries.length}</strong>
+				<span>Agenda Tercatat</span>
+			</div>
+		</div>
+	</section>
+
+	<section class="controls-wrap container" aria-label="Filter dan pencarian kegiatan">
+		<div class="controls-bar">
+			<div class="search-wrap">
+				<label class="sr-only" for="cipta-search">Cari judul atau deskripsi kegiatan</label>
+				<input
+					id="cipta-search"
+					type="search"
+					class="search-field"
+					placeholder="Cari nama atau cerita kegiatan..."
+					data-cipta-search
+				/>
+			</div>
+			<div class="filter-group">
+				<button type="button" class="chip is-active" data-cipta-filter="all">
+					Semua Kegiatan
+				</button>
+				<button type="button" class="chip" data-cipta-filter="photo">Ada Foto</button>
+				<button type="button" class="chip" data-cipta-filter="video">Ada Video</button>
+				{
+					years.map((yr) => (
+						<button type="button" class="chip" data-cipta-filter={`year:${yr}`}>
+							{yr}
+						</button>
+					))
+				}
+			</div>
+		</div>
+	</section>
+
+	<section class="timeline container">
+		<div class="timeline-list">
+			{
+				entries.map((entry) => (
+					<article
+						class="agenda-item"
+						data-cipta-item
+						data-has-photo={entry.hasPhoto ? '1' : '0'}
+						data-has-video={entry.hasVideo ? '1' : '0'}
+						data-year={entry.tahun}
+						data-search={`${entry.judul} ${entry.deskripsi} ${entry.tanggalStr}`.toLowerCase()}
+					>
+						<div class="agenda-date">
+							<span class="date-label">{entry.tanggalStr}</span>
+							<span class="date-year">{entry.tahun}</span>
+						</div>
+
+						<div class="agenda-card">
+							<div class="agenda-head">
+								<h2>{entry.judul}</h2>
+								{entry.deskripsi && <p class="agenda-desc">{entry.deskripsi}</p>}
+							</div>
+
+							{entry.videos.length > 0 && (
+								<div class="video-row">
+									{entry.videos.map((v) => (
+										<a
+											class="btn btn-secondary btn-sm"
+											href={v.url}
+											target="_blank"
+											rel="noopener noreferrer"
+										>
+											▶ {v.judul ?? 'Tonton Cuplikan'} ↗
+										</a>
+									))}
+								</div>
+							)}
+
+							{entry.photos.length > 0 ? (
+								<div class="photo-grid">
+									{entry.photos.map((photo) => (
+										<button
+											type="button"
+											class="photo-tile"
+											data-slide={photo.slideIndex}
+											data-cursor="Perbesar"
+										>
+											<Image
+												src={photo.meta}
+												width={640}
+												height={480}
+												alt={photo.keterangan}
+												class="photo-thumb"
+											/>
+											<span class="photo-cap">{photo.keterangan}</span>
+										</button>
+									))}
+								</div>
+							) : (
+								<div class="preview-plate-wrap">
+									<button
+										type="button"
+										class="preview-plate-btn"
+										data-slide={entry.previewSlideIndex}
+										data-cursor="Pratinjau"
+										aria-label={`Buka pratinjau kegiatan ${entry.judul}`}
+									>
+										<Polaroid
+											variant="editorial"
+											caption={entry.judul}
+											subcaption={`${entry.tanggalStr} · Foto menyusul`}
+											tag={entry.tahun}
+											rotation={-1.5}
+											showTape={false}
+										/>
+									</button>
+								</div>
+							)}
+						</div>
+					</article>
+				))
+			}
+		</div>
+
+		<div class="empty-state" data-cipta-empty hidden>
+			<p>Tidak ada agenda kegiatan yang cocok dengan filter ini.</p>
+			<button type="button" class="btn btn-secondary" data-cipta-reset>Reset Filter</button>
+		</div>
+
+		<aside class="curator-note">
+			<p>
+				Dokumentasi kegiatan disimpan di <code>src/content/kegiatan/</code> beserta foto pada
+				<code>src/assets/kegiatan/&lt;id&gt;/</code>. Tautan video eksternal selalu dibuka di tab
+				baru.
+			</p>
+		</aside>
+	</section>
+
+	<!-- Lightbox Dialog -->
+	<dialog class="aethra-dialog aethra-lightbox" data-cipta-dialog aria-labelledby="lb-judul">
+		<div class="dialog-panel">
+			<div class="lb-head">
+				<div>
+					<span class="lb-date" data-lb-date></span>
+					<h3 id="lb-judul" class="lb-title" data-lb-judul></h3>
+				</div>
+				<button type="button" class="lb-close" data-lb-close aria-label="Tutup lightbox">✕</button>
+			</div>
+
+			<div class="lb-stage">
+				<img class="lb-img" data-lb-img hidden alt="" />
+				<div class="lb-placeholder" data-lb-placeholder hidden>
+					<span class="lb-ph-star" aria-hidden="true">✦</span>
+					<p>Belum ada foto pada agenda ini. Foto yang diunggah kurator akan tampil di sini.</p>
+				</div>
+			</div>
+
+			<p class="lb-caption" data-lb-caption></p>
+
+			<div class="lb-foot">
+				<button type="button" class="chip" data-lb-prev>← Sebelumnya</button>
+				<span class="lb-counter" data-lb-counter>01 / 01</span>
+				<button type="button" class="chip" data-lb-next>Berikutnya →</button>
+			</div>
+		</div>
+	</dialog>
+
+	<script type="application/json" id="cipta-slides-data" set:html={serializedSlides} />
 </BaseLayout>
+
+<script>
+	import { initMotion } from '../scripts/motion';
+
+	interface LightboxSlide {
+		judul: string;
+		tanggal: string;
+		keterangan: string;
+		src?: string;
+	}
+
+	const dataEl = document.getElementById('cipta-slides-data');
+	const slides: LightboxSlide[] = dataEl?.textContent ? JSON.parse(dataEl.textContent) : [];
+
+	const dialog = document.querySelector<HTMLDialogElement>('[data-cipta-dialog]');
+	const lbDate = dialog?.querySelector<HTMLElement>('[data-lb-date]');
+	const lbJudul = dialog?.querySelector<HTMLElement>('[data-lb-judul]');
+	const lbImg = dialog?.querySelector<HTMLImageElement>('[data-lb-img]');
+	const lbPlaceholder = dialog?.querySelector<HTMLElement>('[data-lb-placeholder]');
+	const lbCaption = dialog?.querySelector<HTMLElement>('[data-lb-caption]');
+	const lbCounter = dialog?.querySelector<HTMLElement>('[data-lb-counter]');
+	const lbClose = dialog?.querySelector<HTMLButtonElement>('[data-lb-close]');
+	const lbPrev = dialog?.querySelector<HTMLButtonElement>('[data-lb-prev]');
+	const lbNext = dialog?.querySelector<HTMLButtonElement>('[data-lb-next]');
+
+	let currentSlide = 0;
+
+	const renderSlide = (index: number) => {
+		if (!slides.length) return;
+		currentSlide = ((index % slides.length) + slides.length) % slides.length;
+		const slide = slides[currentSlide];
+		if (!slide) return;
+
+		if (lbDate) lbDate.textContent = slide.tanggal;
+		if (lbJudul) lbJudul.textContent = slide.judul;
+		if (lbCaption) lbCaption.textContent = slide.keterangan;
+		if (lbCounter) {
+			lbCounter.textContent = `${String(currentSlide + 1).padStart(2, '0')} / ${String(slides.length).padStart(2, '0')}`;
+		}
+
+		if (lbImg && lbPlaceholder) {
+			if (slide.src) {
+				lbImg.src = slide.src;
+				lbImg.alt = slide.keterangan;
+				lbImg.hidden = false;
+				lbPlaceholder.hidden = true;
+			} else {
+				lbImg.removeAttribute('src');
+				lbImg.hidden = true;
+				lbPlaceholder.hidden = false;
+			}
+		}
+	};
+
+	const openSlide = (index: number) => {
+		if (!dialog) return;
+		renderSlide(index);
+		if (!dialog.open) dialog.showModal();
+	};
+
+	document.querySelectorAll<HTMLButtonElement>('[data-slide]').forEach((btn) => {
+		btn.addEventListener('click', () => {
+			openSlide(Number(btn.dataset.slide ?? 0));
+		});
+	});
+
+	lbClose?.addEventListener('click', () => dialog?.close());
+	lbPrev?.addEventListener('click', () => renderSlide(currentSlide - 1));
+	lbNext?.addEventListener('click', () => renderSlide(currentSlide + 1));
+
+	dialog?.addEventListener('click', (e) => {
+		if (e.target === dialog) dialog.close();
+	});
+
+	dialog?.addEventListener('keydown', (e) => {
+		if (e.key === 'ArrowLeft') {
+			e.preventDefault();
+			renderSlide(currentSlide - 1);
+		} else if (e.key === 'ArrowRight') {
+			e.preventDefault();
+			renderSlide(currentSlide + 1);
+		}
+	});
+
+	// Filter & Pencarian Kegiatan
+	const items = Array.from(document.querySelectorAll<HTMLElement>('[data-cipta-item]'));
+	const searchInput = document.querySelector<HTMLInputElement>('[data-cipta-search]');
+	const filterBtns = document.querySelectorAll<HTMLButtonElement>('[data-cipta-filter]');
+	const resetBtn = document.querySelector<HTMLButtonElement>('[data-cipta-reset]');
+	const emptyEl = document.querySelector<HTMLElement>('[data-cipta-empty]');
+
+	let activeFilter = 'all';
+	let query = '';
+
+	const applyFilters = () => {
+		const q = query.trim().toLowerCase();
+		let shown = 0;
+
+		items.forEach((item) => {
+			const hasPhoto = item.dataset.hasPhoto === '1';
+			const hasVideo = item.dataset.hasVideo === '1';
+			const year = item.dataset.year ?? '';
+			const haystack = item.dataset.search ?? '';
+
+			let filterPass = true;
+			if (activeFilter === 'photo') filterPass = hasPhoto;
+			else if (activeFilter === 'video') filterPass = hasVideo;
+			else if (activeFilter.startsWith('year:')) {
+				filterPass = year === activeFilter.slice(5);
+			}
+
+			const searchPass = !q || haystack.includes(q);
+			const visible = filterPass && searchPass;
+
+			item.hidden = !visible;
+			if (visible) shown += 1;
+		});
+
+		if (emptyEl) emptyEl.hidden = shown > 0;
+	};
+
+	searchInput?.addEventListener('input', () => {
+		query = searchInput.value;
+		applyFilters();
+	});
+
+	filterBtns.forEach((btn) => {
+		btn.addEventListener('click', () => {
+			activeFilter = btn.dataset.ciptaFilter ?? 'all';
+			filterBtns.forEach((b) => b.classList.toggle('is-active', b === btn));
+			applyFilters();
+		});
+	});
+
+	resetBtn?.addEventListener('click', () => {
+		query = '';
+		activeFilter = 'all';
+		if (searchInput) searchInput.value = '';
+		filterBtns.forEach((b) => b.classList.toggle('is-active', b.dataset.ciptaFilter === 'all'));
+		applyFilters();
+	});
+
+	initMotion((gsapInstance) => {
+		gsapInstance.from('.agenda-item', {
+			y: 28,
+			opacity: 0,
+			duration: 0.6,
+			ease: 'power2.out',
+			stagger: 0.1,
+		});
+	});
+</script>
+
+<style>
+	.page-head {
+		padding-top: clamp(3rem, 6vw, 4.5rem);
+		padding-bottom: 2.5rem;
+		border-bottom: 1px solid var(--border);
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-end;
+		gap: 2rem;
+		flex-wrap: wrap;
+	}
+
+	.head-copy {
+		max-width: 38rem;
+	}
+
+	.head-desc {
+		font-size: 1.02rem;
+		color: var(--ink-muted);
+		margin: 0;
+	}
+
+	.stat-pill {
+		display: flex;
+		align-items: baseline;
+		gap: 0.5rem;
+		padding: 0.6rem 1.05rem;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-pill);
+		background: var(--surface);
+	}
+
+	.stat-pill strong {
+		font-family: var(--font-serif);
+		font-size: 1.35rem;
+		color: var(--navy);
+		line-height: 1;
+	}
+
+	.stat-pill span {
+		font-size: 0.76rem;
+		font-weight: 500;
+		color: var(--ink-faint);
+	}
+
+	.controls-wrap {
+		padding-top: 2rem;
+		padding-bottom: 2rem;
+	}
+
+	.controls-bar {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 1rem;
+		flex-wrap: wrap;
+	}
+
+	.search-wrap {
+		flex: 1 1 18rem;
+		max-width: 24rem;
+	}
+
+	.filter-group {
+		display: flex;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+	}
+
+	.timeline {
+		padding-bottom: 3rem;
+	}
+
+	.timeline-list {
+		display: grid;
+		gap: 2.5rem;
+	}
+
+	.agenda-item {
+		display: grid;
+		grid-template-columns: 200px minmax(0, 1fr);
+		gap: 1.5rem 2.5rem;
+		align-items: start;
+	}
+
+	.agenda-item[hidden] {
+		display: none;
+	}
+
+	.agenda-date {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+		padding-top: 0.35rem;
+		position: sticky;
+		top: 5.5rem;
+	}
+
+	.date-label {
+		font-size: 0.84rem;
+		font-weight: 600;
+		color: var(--navy);
+	}
+
+	.date-year {
+		font-family: var(--font-mono);
+		font-size: 0.74rem;
+		color: var(--gold);
+	}
+
+	.agenda-card {
+		background: #ffffff;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-lg);
+		padding: clamp(1.4rem, 3.5vw, 2.25rem);
+		display: grid;
+		gap: 1.5rem;
+	}
+
+	.agenda-head h2 {
+		font-size: clamp(1.75rem, 3.5vw, 2.45rem);
+		margin: 0 0 0.45rem;
+	}
+
+	.agenda-desc {
+		font-size: 0.98rem;
+		color: var(--ink-muted);
+		margin: 0;
+		max-width: 42rem;
+	}
+
+	.video-row {
+		display: flex;
+		gap: 0.65rem;
+		flex-wrap: wrap;
+	}
+
+	.btn-sm {
+		padding: 0.55rem 1.05rem;
+		font-size: 0.82rem;
+	}
+
+	.photo-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+		gap: 0.9rem;
+	}
+
+	.photo-tile {
+		text-align: left;
+		font-family: inherit;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		padding: 0.5rem;
+		cursor: pointer;
+		display: grid;
+		gap: 0.5rem;
+		transition:
+			border-color 0.2s ease,
+			transform 0.2s ease;
+	}
+
+	.photo-tile:hover {
+		border-color: var(--navy);
+		transform: translateY(-2px);
+	}
+
+	.photo-thumb {
+		width: 100%;
+		aspect-ratio: 4/3;
+		object-fit: cover;
+		border-radius: 4px;
+		display: block;
+	}
+
+	.photo-cap {
+		font-size: 0.8rem;
+		color: var(--ink-muted);
+		padding-inline: 0.2rem;
+	}
+
+	.preview-plate-wrap {
+		display: flex;
+		justify-content: flex-start;
+	}
+
+	.preview-plate-btn {
+		background: transparent;
+		border: none;
+		padding: 0;
+		cursor: pointer;
+		text-align: left;
+		max-width: 19rem;
+		width: 100%;
+	}
+
+	.empty-state {
+		text-align: center;
+		padding: 3rem 1rem;
+		border: 1px dashed var(--border-strong);
+		border-radius: var(--radius-lg);
+		color: var(--ink-muted);
+	}
+
+	.curator-note {
+		margin-top: 2.5rem;
+		padding: 1.15rem 1.4rem;
+		border-radius: var(--radius);
+		background: var(--surface);
+		border: 1px solid var(--border);
+		font-size: 0.86rem;
+		color: var(--ink-muted);
+	}
+
+	.curator-note p {
+		margin: 0;
+	}
+
+	.curator-note code {
+		font-family: var(--font-mono);
+		font-size: 0.8rem;
+		color: var(--navy);
+	}
+
+	/* Lightbox */
+	dialog.aethra-lightbox {
+		max-width: 44rem;
+		width: min(100% - 2rem, 44rem);
+	}
+
+	.lb-head {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		gap: 1rem;
+		padding-bottom: 1rem;
+		border-bottom: 1px solid var(--border);
+		margin-bottom: 1.25rem;
+	}
+
+	.lb-date {
+		display: block;
+		font-size: 0.72rem;
+		font-weight: 600;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--gold);
+		margin-bottom: 0.25rem;
+	}
+
+	.lb-title {
+		font-size: 1.65rem;
+		margin: 0;
+	}
+
+	.lb-close {
+		width: 2rem;
+		height: 2rem;
+		border-radius: 50%;
+		border: 1px solid var(--border);
+		background: var(--surface);
+		color: var(--navy);
+		cursor: pointer;
+		flex-shrink: 0;
+	}
+
+	.lb-stage {
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		overflow: hidden;
+		margin-bottom: 1rem;
+	}
+
+	.lb-img {
+		display: block;
+		width: 100%;
+		max-height: 60vh;
+		object-fit: contain;
+		background: var(--surface);
+	}
+
+	.lb-placeholder {
+		padding: 3rem 1.5rem;
+		text-align: center;
+		color: var(--ink-muted);
+	}
+
+	.lb-ph-star {
+		display: inline-block;
+		color: var(--gold);
+		font-size: 1.4rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.lb-placeholder p {
+		margin: 0 auto;
+		max-width: 24rem;
+		font-size: 0.92rem;
+	}
+
+	.lb-caption {
+		font-size: 0.94rem;
+		color: var(--ink-muted);
+		margin: 0 0 1.25rem;
+	}
+
+	.lb-foot {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 0.75rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--border);
+	}
+
+	.lb-counter {
+		font-family: var(--font-mono);
+		font-size: 0.76rem;
+		color: var(--ink-faint);
+	}
+
+	@media (max-width: 820px) {
+		.agenda-item {
+			grid-template-columns: 1fr;
+			gap: 0.75rem;
+		}
+		.agenda-date {
+			position: static;
+			flex-direction: row;
+			justify-content: space-between;
+			align-items: baseline;
+		}
+	}
+</style>

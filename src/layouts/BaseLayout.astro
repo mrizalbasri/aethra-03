@@ -39,6 +39,7 @@ const nav = [
 		<a class="skip-link" href="#konten">Lewati ke konten</a>
 
 		<header class="site-header">
+			<div class="scroll-progress" data-scroll-progress aria-hidden="true"></div>
 			<div class="container header-inner">
 				<a class="brand" href="/" aria-label="Aethra 03, kembali ke beranda">
 					<Moon class="brand-emblem" />
@@ -124,6 +125,14 @@ const nav = [
 				</p>
 			</div>
 		</footer>
+
+		<div class="aethra-cursor" data-cursor-el aria-hidden="true">
+			<span class="aethra-cursor-label" data-cursor-label></span>
+		</div>
+
+		<script>
+			import '../scripts/interactions';
+		</script>
 	</body>
 </html>
 
@@ -140,6 +149,18 @@ const nav = [
 		background: rgba(255, 255, 255, 0.88);
 		backdrop-filter: blur(12px);
 		border-bottom: 1px solid var(--border);
+	}
+
+	.scroll-progress {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 2px;
+		background: linear-gradient(90deg, var(--navy), var(--gold-bright));
+		transform-origin: 0 50%;
+		transform: scaleX(0);
+		pointer-events: none;
 	}
 
 	.header-inner {
