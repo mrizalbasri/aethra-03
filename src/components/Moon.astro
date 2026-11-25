@@ -1,26 +1,34 @@
 ---
-// Lambang bulan sabit linework (acuan bordir Aethra). Dekoratif.
+// Lambang bulan sabit & bintang empat sudut Aethra 03. Dekoratif.
 interface Props {
 	class?: string;
 }
 const { class: className = '' } = Astro.props;
 ---
 
-<svg class={`moon-icon ${className}`} viewBox="0 0 200 200" aria-hidden="true" focusable="false">
-	<defs>
-		<mask id="moon-cut">
-			<rect width="200" height="200" fill="white"></rect>
-			<circle cx="128" cy="86" r="74" fill="black"></circle>
-		</mask>
-	</defs>
-	<circle cx="96" cy="104" r="84" fill="currentColor" mask="url(#moon-cut)"></circle>
+<svg
+	class:list={['moon-icon', className]}
+	viewBox="0 0 200 200"
+	fill="none"
+	aria-hidden="true"
+	focusable="false"
+>
+	<path
+		d="M 62.35 38.02 A 76 76 0 1 0 167.48 116.88 A 66 66 0 1 1 62.35 38.02 Z"
+		fill="currentColor"
+	></path>
+	<path
+		d="M 144 36 Q 146 54 164 56 Q 146 58 144 76 Q 142 58 124 56 Q 142 54 144 36 Z"
+		fill="currentColor"
+	></path>
 </svg>
 
 <style>
 	.moon-icon {
 		display: block;
-		width: 1.5rem;
-		height: 1.5rem;
-		color: var(--gold-accent, #9a6e1a);
+		width: 1.4rem;
+		height: 1.4rem;
+		color: var(--gold, #9e731f);
+		flex-shrink: 0;
 	}
 </style>

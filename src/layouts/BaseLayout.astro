@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import Moon from '../components/Moon.astro';
 
 interface Props {
 	title?: string;
@@ -28,7 +29,7 @@ const nav = [
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="description" content={description} />
-		<meta name="theme-color" content="#fbf9f4" />
+		<meta name="theme-color" content="#ffffff" />
 		<meta name="robots" content="noindex, nofollow" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="generator" content={Astro.generator} />
@@ -37,25 +38,14 @@ const nav = [
 	<body>
 		<a class="skip-link" href="#konten">Lewati ke konten</a>
 
-		<!-- Pita atas: Kepala Berita / Arsip Resmi -->
-		<div class="masthead-top">
-			<div class="container masthead-inner">
-				<span class="masthead-left">
-					<span class="bullet" aria-hidden="true">■</span>
-					ARSIP DOKUMENTASI ANGKATAN · MASADAGRI BATCH III
-				</span>
-				<span class="masthead-right">
-					KEMENTERIAN DALAM NEGERI RI · VOL. 03 · 2024
-				</span>
-			</div>
-		</div>
-
 		<header class="site-header">
 			<div class="container header-inner">
 				<a class="brand" href="/" aria-label="Aethra 03, kembali ke beranda">
+					<Moon class="brand-emblem" />
 					<span class="brand-script">Aethra</span>
 					<span class="brand-num">03</span>
-					<span class="brand-tag">BUKU TAHUNAN</span>
+					<span class="brand-divider" aria-hidden="true"></span>
+					<span class="brand-sub">Masadagri III</span>
 				</a>
 				<nav aria-label="Navigasi Utama">
 					<ul class="nav-list">
@@ -67,7 +57,7 @@ const nav = [
 										aria-current={path === item.href ? 'page' : undefined}
 										class="nav-link"
 									>
-										<span class="nav-num">{item.num}</span>
+										<sup class="nav-num">{item.num}</sup>
 										<span class="nav-label">{item.label}</span>
 									</a>
 								</li>
@@ -85,30 +75,53 @@ const nav = [
 		<footer class="site-footer">
 			<div class="container footer-inner">
 				<div class="footer-col-brand">
-					<span class="footer-title">Aethra 03</span>
+					<div class="footer-brand-row">
+						<Moon class="footer-emblem" />
+						<span class="footer-title">Aethra 03</span>
+					</div>
 					<p class="footer-motto">Cipta · Rasa · Karsa</p>
 					<p class="footer-note">
-						Arsip kenangan dan dokumentasi dibuat secara independen oleh peserta Aethra 03
-						untuk merawat memori kebersamaan selama masa bakti di Kementerian Dalam Negeri.
+						Buku tahunan dan dokumentasi kebersamaan peserta Masadagri Batch III, dibuat oleh
+						peserta untuk merawat kenangan selama di Kementerian Dalam Negeri.
 					</p>
 				</div>
+
+				<div class="footer-col-nav">
+					<span class="footer-heading">Daftar Isi</span>
+					<ul class="footer-links">
+						{
+							nav.map((item) => (
+								<li>
+									<a href={item.href}>{item.label}</a>
+								</li>
+							))
+						}
+					</ul>
+				</div>
+
 				<div class="footer-col-meta">
-					<div class="meta-box">
-						<span class="meta-label">STATUS DOKUMEN</span>
-						<span class="meta-val">Arsip Terbuka Angkatan</span>
-					</div>
-					<div class="meta-box">
-						<span class="meta-label">TOTAL REKAN</span>
-						<span class="meta-val">64 Peserta Masadagri</span>
-					</div>
-					<div class="meta-box">
-						<span class="meta-label">LOKASI ARSIP</span>
-						<span class="meta-val">Jakarta Pusat, Indonesia</span>
-					</div>
+					<span class="footer-heading">Ringkasan Angkatan</span>
+					<dl class="meta-list">
+						<div class="meta-row">
+							<dt>Keluarga Besar</dt>
+							<dd>64 Peserta</dd>
+						</div>
+						<div class="meta-row">
+							<dt>Angkatan</dt>
+							<dd>Masadagri Batch III</dd>
+						</div>
+						<div class="meta-row">
+							<dt>Inisiatif</dt>
+							<dd>Rekan Angkatan Aethra 03</dd>
+						</div>
+					</dl>
 				</div>
 			</div>
 			<div class="container footer-bottom">
-				<p>© 2024 Aethra 03. Bukan publikasi resmi Kementerian Dalam Negeri Republik Indonesia.</p>
+				<p>
+					© Aethra 03 · Dibuat oleh peserta untuk peserta. Bukan publikasi resmi Kementerian
+					Dalam Negeri RI.
+				</p>
 			</div>
 		</footer>
 	</body>
@@ -119,89 +132,75 @@ const nav = [
 		flex: 1;
 	}
 
-	/* Pita Kepala Surat / Masthead */
-	.masthead-top {
-		background: var(--navy-deep);
-		color: #ffffff;
-		font-family: var(--font-mono);
-		font-size: 0.68rem;
-		letter-spacing: 0.12em;
-		padding-block: 0.4rem;
-		border-bottom: 1px solid var(--navy-primary);
-	}
-
-	.masthead-inner {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
-		flex-wrap: wrap;
-	}
-
-	.bullet {
-		color: var(--gold-badge);
-		margin-right: 0.35rem;
-		font-size: 0.6rem;
-	}
-
 	/* Navigasi Header */
 	.site-header {
 		position: sticky;
 		top: 0;
 		z-index: 50;
-		background: rgba(251, 249, 244, 0.94);
-		backdrop-filter: blur(8px);
-		border-bottom: 1px solid var(--paper-border-strong);
+		background: rgba(255, 255, 255, 0.88);
+		backdrop-filter: blur(12px);
+		border-bottom: 1px solid var(--border);
 	}
 
 	.header-inner {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: 1.5rem;
-		padding-block: 0.75rem;
+		gap: 1rem 2rem;
+		padding-block: 0.9rem;
 		flex-wrap: wrap;
 	}
 
 	.brand {
 		display: inline-flex;
-		align-items: baseline;
+		align-items: center;
 		gap: 0.45rem;
 		text-decoration: none;
-		color: var(--navy-deep);
+		color: var(--navy);
 		line-height: 1;
+	}
+
+	:global(.brand-emblem) {
+		width: 1.5rem;
+		height: 1.5rem;
+		color: var(--gold);
 	}
 
 	.brand-script {
 		font-family: var(--font-script);
-		font-size: 2.2rem;
-		color: var(--navy-deep);
+		font-size: 2.05rem;
+		color: var(--navy);
 		line-height: 0.9;
+		padding-top: 0.15rem;
 	}
 
 	.brand-num {
 		font-family: var(--font-serif);
 		font-style: italic;
-		font-size: 1.4rem;
+		font-size: 1.35rem;
 		font-weight: 600;
-		color: var(--gold-accent);
+		color: var(--gold);
 	}
 
-	.brand-tag {
-		font-family: var(--font-mono);
-		font-size: 0.62rem;
+	.brand-divider {
+		width: 1px;
+		height: 1rem;
+		background: var(--border-strong);
+		margin-inline: 0.35rem;
+	}
+
+	.brand-sub {
+		font-family: var(--font-body);
+		font-size: 0.72rem;
+		font-weight: 500;
 		letter-spacing: 0.14em;
-		padding: 0.15rem 0.4rem;
-		border: 1px solid var(--paper-border-strong);
-		border-radius: var(--radius-sm);
-		background: var(--paper-warm);
-		color: var(--ink-muted);
-		align-self: center;
+		text-transform: uppercase;
+		color: var(--ink-faint);
 	}
 
 	.nav-list {
 		display: flex;
-		gap: 0.35rem 1.4rem;
+		gap: 0.35rem 1.5rem;
 		list-style: none;
 		margin: 0;
 		padding: 0;
@@ -210,13 +209,13 @@ const nav = [
 
 	.nav-link {
 		display: inline-flex;
-		align-items: center;
-		gap: 0.35rem;
+		align-items: baseline;
+		gap: 0.3rem;
 		color: var(--ink-muted);
 		text-decoration: none;
 		font-size: 0.9rem;
 		font-weight: 500;
-		padding: 0.35rem 0.2rem;
+		padding: 0.35rem 0.1rem;
 		border-bottom: 2px solid transparent;
 		transition:
 			color 0.2s ease,
@@ -225,108 +224,139 @@ const nav = [
 
 	.nav-num {
 		font-family: var(--font-mono);
-		font-size: 0.7rem;
+		font-size: 0.62rem;
 		color: var(--ink-faint);
+		line-height: 1;
 	}
 
 	.nav-link:hover {
-		color: var(--navy-deep);
-		border-bottom-color: var(--paper-border-strong);
+		color: var(--navy);
+		border-bottom-color: var(--border-strong);
 	}
 
 	.nav-link[aria-current='page'] {
-		color: var(--navy-deep);
+		color: var(--navy);
 		font-weight: 600;
-		border-bottom-color: var(--navy-primary);
+		border-bottom-color: var(--navy);
 	}
 
 	.nav-link[aria-current='page'] .nav-num {
-		color: var(--gold-accent);
+		color: var(--gold);
 	}
 
-	/* Footer / Kolofon Arsip */
+	/* Footer Editorial */
 	.site-footer {
-		margin-top: 6rem;
-		background: var(--paper-warm);
-		border-top: 2px solid var(--paper-border-strong);
-		padding-top: 3.5rem;
+		margin-top: 5rem;
+		background: var(--bg);
+		border-top: 1px solid var(--border);
+		padding-top: 4rem;
 		padding-bottom: 2.5rem;
 		color: var(--ink-muted);
-		font-size: 0.88rem;
+		font-size: 0.9rem;
 	}
 
 	.footer-inner {
 		display: grid;
-		grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+		grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.8fr) minmax(0, 1.1fr);
 		gap: 3rem;
-		padding-bottom: 2.5rem;
-		border-bottom: 1px solid var(--paper-border);
+		padding-bottom: 3rem;
+		border-bottom: 1px solid var(--border);
+	}
+
+	.footer-brand-row {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.65rem;
+		margin-bottom: 0.45rem;
+	}
+
+	:global(.footer-emblem) {
+		width: 1.75rem;
+		height: 1.75rem;
+		color: var(--gold);
 	}
 
 	.footer-title {
 		font-family: var(--font-script);
-		font-size: 2.6rem;
-		color: var(--navy-deep);
-		display: block;
+		font-size: 2.5rem;
+		color: var(--navy);
 		line-height: 1;
-		margin-bottom: 0.25rem;
 	}
 
 	.footer-motto {
 		font-family: var(--font-serif);
 		font-style: italic;
 		font-weight: 500;
-		font-size: 1.25rem;
-		color: var(--gold-accent);
-		margin: 0 0 0.8rem;
+		font-size: 1.2rem;
+		color: var(--gold);
+		margin: 0 0 0.85rem;
 	}
 
 	.footer-note {
-		max-width: 34rem;
-		line-height: 1.6;
+		max-width: 30rem;
+		line-height: 1.65;
 		color: var(--ink-muted);
 		margin: 0;
 	}
 
-	.footer-col-meta {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-		gap: 1.5rem;
-		align-content: start;
-	}
-
-	.meta-box {
-		display: flex;
-		flex-direction: column;
-		gap: 0.3rem;
-		border-left: 2px solid var(--paper-border-strong);
-		padding-left: 0.8rem;
-	}
-
-	.meta-label {
-		font-family: var(--font-mono);
-		font-size: 0.65rem;
-		letter-spacing: 0.12em;
+	.footer-heading {
+		display: block;
+		font-size: 0.7rem;
+		font-weight: 600;
+		letter-spacing: 0.16em;
 		text-transform: uppercase;
+		color: var(--ink-faint);
+		margin-bottom: 1rem;
+	}
+
+	.footer-links {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 0.55rem;
+	}
+
+	.footer-links a {
+		text-decoration: none;
+		color: var(--navy);
+		font-weight: 500;
+		font-size: 0.92rem;
+	}
+
+	.footer-links a:hover {
+		color: var(--gold);
+	}
+
+	.meta-list {
+		margin: 0;
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	.meta-row {
+		display: flex;
+		justify-content: space-between;
+		gap: 1rem;
+		padding-bottom: 0.6rem;
+		border-bottom: 1px solid var(--border);
+		font-size: 0.86rem;
+	}
+
+	.meta-row dt {
 		color: var(--ink-faint);
 	}
 
-	.meta-val {
-		font-family: var(--font-body);
-		font-size: 0.85rem;
+	.meta-row dd {
+		margin: 0;
 		font-weight: 600;
-		color: var(--navy-deep);
+		color: var(--navy);
+		text-align: right;
 	}
 
 	.footer-bottom {
-		padding-top: 1.8rem;
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		flex-wrap: wrap;
-		gap: 1rem;
-		font-family: var(--font-mono);
-		font-size: 0.72rem;
+		padding-top: 1.75rem;
+		font-size: 0.78rem;
 		color: var(--ink-faint);
 	}
 
@@ -334,12 +364,16 @@ const nav = [
 		margin: 0;
 	}
 
-	@media (max-width: 768px) {
+	@media (max-width: 860px) {
 		.footer-inner {
 			grid-template-columns: 1fr;
-			gap: 2rem;
+			gap: 2.25rem;
 		}
-		.masthead-right {
+	}
+
+	@media (max-width: 640px) {
+		.brand-divider,
+		.brand-sub {
 			display: none;
 		}
 	}

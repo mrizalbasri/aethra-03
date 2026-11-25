@@ -1,40 +1,42 @@
 @import '@fontsource/great-vibes';
 @import '@fontsource-variable/outfit';
 @import '@fontsource/cormorant-garamond/400.css';
+@import '@fontsource/cormorant-garamond/500.css';
 @import '@fontsource/cormorant-garamond/500-italic.css';
+@import '@fontsource/cormorant-garamond/600.css';
 @import '@fontsource/cormorant-garamond/600-italic.css';
 @import '@fontsource/cormorant-garamond/700.css';
 
 :root {
-	/* Palet Arsip Angkatan / Editorial Paper & Navy Ink */
-	--paper: #fbf9f4;
-	--paper-warm: #f4efe5;
-	--paper-card: #ffffff;
-	--paper-border: #e4dcce;
-	--paper-border-strong: #c8bdae;
+	/* Palet Buku Tahunan Putih Bersih & Tinta Aethra */
+	--bg: #ffffff;
+	--surface: #f8fafc;
+	--surface-alt: #f1f5f9;
+	--border: #e2e8f0;
+	--border-strong: #cbd5e1;
 
-	--navy-deep: #0a1424;
-	--navy-primary: #122238;
-	--navy-soft: #243b5e;
+	--navy: #0b1628;
+	--navy-mid: #162844;
+	--navy-soft: #334e73;
 
-	--ink: #111a28;
-	--ink-muted: #4e5c6e;
-	--ink-faint: #8a96a7;
-	--ink-ghost: #cbd4e0;
+	--ink: #0f172a;
+	--ink-muted: #475569;
+	--ink-faint: #64748b;
+	--ink-ghost: #cbd5e1;
 
-	--gold-accent: #9a6e1a;
-	--gold-badge: #c4952c;
-	--gold-light: #faefd2;
-	--tape-bg: rgba(238, 226, 195, 0.75);
+	--gold: #9e731f;
+	--gold-bright: #cfa144;
+	--gold-soft: #fcf6e8;
 
 	--font-script: 'Great Vibes', cursive;
 	--font-body: 'Outfit Variable', system-ui, -apple-system, sans-serif;
 	--font-serif: 'Cormorant Garamond', Georgia, serif;
 	--font-mono: ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
 
-	--radius-sm: 2px;
-	--radius: 6px;
-	--radius-lg: 10px;
+	--radius-sm: 4px;
+	--radius: 8px;
+	--radius-lg: 14px;
+	--radius-pill: 999px;
 	--content-width: 74rem;
 }
 
@@ -47,7 +49,7 @@
 html {
 	scroll-behavior: smooth;
 	color-scheme: light;
-	background-color: var(--paper);
+	background-color: var(--bg);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -64,23 +66,30 @@ body {
 	flex-direction: column;
 	font-family: var(--font-body);
 	color: var(--ink);
-	background-color: var(--paper);
-	background-image:
-		radial-gradient(ellipse at 50% -10%, #ffffff 0%, var(--paper) 70%),
-		linear-gradient(180deg, var(--paper) 0%, #f7f3ea 100%);
-	line-height: 1.6;
+	background-color: var(--bg);
+	line-height: 1.65;
+	-webkit-font-smoothing: antialiased;
 }
 
-/* Tipografi dasar */
+/* Tipografi Editorial */
 h1,
 h2,
 h3,
 h4 {
 	font-family: var(--font-serif);
 	font-weight: 600;
-	color: var(--navy-deep);
-	line-height: 1.15;
+	letter-spacing: -0.02em;
+	color: var(--navy);
+	line-height: 1.08;
 	margin: 0 0 0.5em;
+}
+
+h1 em,
+h2 em,
+h3 em {
+	font-style: italic;
+	font-weight: 500;
+	color: var(--navy-soft);
 }
 
 h1 {
@@ -88,11 +97,11 @@ h1 {
 }
 
 h2 {
-	font-size: clamp(2rem, 4.5vw, 3.2rem);
+	font-size: clamp(2.1rem, 4.5vw, 3.25rem);
 }
 
 h3 {
-	font-size: clamp(1.4rem, 3vw, 2.2rem);
+	font-size: clamp(1.45rem, 3vw, 2.2rem);
 }
 
 p {
@@ -100,19 +109,19 @@ p {
 }
 
 a {
-	color: var(--navy-primary);
+	color: var(--navy-mid);
 	text-decoration: underline;
 	text-underline-offset: 3px;
 	transition: color 0.2s ease;
 }
 
 a:hover {
-	color: var(--gold-accent);
+	color: var(--gold);
 }
 
 a:focus-visible,
 button:focus-visible {
-	outline: 2px solid var(--navy-primary);
+	outline: 2px solid var(--navy);
 	outline-offset: 3px;
 }
 
@@ -122,84 +131,89 @@ button:focus-visible {
 	margin-inline: auto;
 }
 
-/* Tombol Editorial */
+/* Tombol */
 .btn {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	gap: 0.5rem;
-	padding: 0.8rem 1.4rem;
-	border-radius: var(--radius-sm);
+	padding: 0.8rem 1.5rem;
+	border-radius: var(--radius-pill);
 	font-family: var(--font-body);
-	font-size: 0.92rem;
+	font-size: 0.9rem;
 	font-weight: 500;
 	text-decoration: none;
 	transition:
 		background-color 0.2s ease,
 		border-color 0.2s ease,
+		color 0.2s ease,
 		transform 0.2s ease,
 		box-shadow 0.2s ease;
 	cursor: pointer;
 }
 
 .btn-primary {
-	background-color: var(--navy-primary);
+	background-color: var(--navy);
 	color: #ffffff;
-	border: 1px solid var(--navy-deep);
-	box-shadow: 0 4px 12px rgba(10, 20, 36, 0.15);
+	border: 1px solid var(--navy);
+	box-shadow: 0 8px 20px -8px rgba(11, 22, 40, 0.35);
 }
 
 .btn-primary:hover {
-	background-color: var(--navy-deep);
+	background-color: var(--navy-mid);
+	border-color: var(--navy-mid);
 	color: #ffffff;
 	transform: translateY(-1px);
-	box-shadow: 0 6px 16px rgba(10, 20, 36, 0.2);
+	box-shadow: 0 12px 24px -8px rgba(11, 22, 40, 0.42);
 }
 
 .btn-secondary {
 	background-color: #ffffff;
-	color: var(--navy-primary);
-	border: 1px solid var(--paper-border-strong);
-	box-shadow: 0 2px 6px rgba(10, 20, 36, 0.05);
+	color: var(--navy);
+	border: 1px solid var(--border-strong);
 }
 
 .btn-secondary:hover {
-	background-color: var(--paper-warm);
+	background-color: var(--surface);
 	border-color: var(--navy-soft);
-	color: var(--navy-deep);
+	color: var(--navy);
 	transform: translateY(-1px);
 }
 
-/* Label Arsip */
-.archival-tag {
+/* Penanda Bab / Eyebrow */
+.eyebrow {
 	display: inline-flex;
 	align-items: center;
-	gap: 0.4rem;
-	font-family: var(--font-mono);
+	gap: 0.6rem;
+	font-family: var(--font-body);
 	font-size: 0.72rem;
-	letter-spacing: 0.15em;
-	text-transform: uppercase;
-	color: var(--gold-accent);
 	font-weight: 600;
-	margin: 0 0 0.8rem;
+	letter-spacing: 0.18em;
+	text-transform: uppercase;
+	color: var(--gold);
+	margin: 0 0 0.9rem;
 }
 
-.archival-tag::before {
-	content: '//';
-	color: var(--ink-faint);
+.eyebrow::before {
+	content: '';
+	display: inline-block;
+	width: 1.4rem;
+	height: 1px;
+	background: currentColor;
 }
 
 .skip-link {
 	position: absolute;
 	left: -999px;
 	top: 0.5rem;
-	background: var(--navy-primary);
+	background: var(--navy);
 	color: #ffffff;
 	padding: 0.5rem 1rem;
 	border-radius: var(--radius-sm);
 	z-index: 100;
-	font-family: var(--font-mono);
-	font-size: 0.8rem;
+	font-family: var(--font-body);
+	font-size: 0.82rem;
+	font-weight: 500;
 	text-decoration: none;
 }
 
