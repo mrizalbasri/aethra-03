@@ -1,3 +1,5 @@
+import { wrapIndex } from '../utils/yearbook';
+
 export interface MemberItem {
 	no: string;
 	nama: string;
@@ -38,7 +40,7 @@ export function setupMemberModal(items: MemberItem[]) {
 
 	const render = (index: number) => {
 		const total = items.length;
-		currentIndex = ((index % total) + total) % total;
+		currentIndex = wrapIndex(index, total);
 		const item = items[currentIndex];
 		if (!item) return;
 

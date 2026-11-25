@@ -6,6 +6,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Polaroid from '../components/Polaroid.astro';
 import MemberModal from '../components/MemberModal.astro';
 import type { MemberItem } from '../scripts/memberModal';
+import { formatMetaAnggota, getInisial } from '../utils/yearbook';
 
 const TOTAL = 64;
 const peserta = (await getCollection('peserta', ({ data }) => data.setuju)).sort((a, b) =>
@@ -20,14 +21,6 @@ const fotoModules = import.meta.glob<{ default: ImageMetadata }>(
 	'../assets/peserta/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}',
 	{ eager: true },
 );
-
-const inisial = (nama: string) =>
-	nama
-		.split(/\s+/)
-		.filter(Boolean)
-		.slice(0, 2)
-		.map((k) => k[0]!.toUpperCase())
-		.join('');
 
 const kontakSheet: MemberItem[] = await Promise.all(
 	Array.from({ length: TOTAL }, async (_, i) => {
@@ -52,10 +45,10 @@ const kontakSheet: MemberItem[] = await Promise.all(
 			}
 		}
 
-		const meta = [p.data.divisi, p.data.daerah].filter(Boolean).join(' · ') || 'Anggota Aethra 03';
+		const meta = formatMetaAnggota(p.data.divisi, p.data.daerah);
 		return {
 			no,
-			inisial: inisial(p.data.nama),
+			inisial: getInisial(p.data.nama),
 			nama: p.data.nama,
 			meta,
 			divisi: p.data.divisi,
