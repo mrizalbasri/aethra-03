@@ -1,5 +1,8 @@
 # Aethra 03: Web Dokumentasi Angkatan
 
+[![CI](https://github.com/mrizalbasri/aethra-03/actions/workflows/ci.yml/badge.svg)](https://github.com/mrizalbasri/aethra-03/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/mrizalbasri/aethra-03/graph/badge.svg)](https://codecov.io/gh/mrizalbasri/aethra-03)
+
 Situs statis untuk dokumentasi angkatan magang **Aethra 03** (Masadagri, Kemendagri).
 Dibuat oleh peserta, untuk peserta. Cipta · Rasa · Karsa.
 
@@ -21,6 +24,8 @@ Memakai [pnpm](https://pnpm.io).
 | `pnpm dev`       | Jalankan server pengembangan       |
 | `pnpm build`     | Bangun situs ke folder `dist/`     |
 | `pnpm preview`   | Lihat hasil build secara lokal     |
+| `pnpm test`      | Jalankan uji unit Vitest           |
+| `pnpm test:coverage` | Jalankan uji unit + cakupan lcov |
 
 ## Menambah isi
 

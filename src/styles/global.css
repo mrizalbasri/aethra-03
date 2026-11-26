@@ -1,26 +1,49 @@
 @import '@fontsource/great-vibes';
 @import '@fontsource-variable/outfit';
+@import '@fontsource/cormorant-garamond/400.css';
+@import '@fontsource/cormorant-garamond/500.css';
 @import '@fontsource/cormorant-garamond/500-italic.css';
+@import '@fontsource/cormorant-garamond/600.css';
 @import '@fontsource/cormorant-garamond/600-italic.css';
+@import '@fontsource/cormorant-garamond/700.css';
 
 :root {
-	/* Palet Aethra 03: biru tua + emas (acuan bordir dan logo masadagri) */
-	--navy-950: #050b18;
-	--navy-900: #0a1530;
-	--navy-800: #10224a;
-	--navy-600: #1c3a78;
-	--gold-300: #f3d98b;
-	--gold-400: #e4bf5c;
-	--gold-500: #c9a13b;
-	--ink: #eaeefb;
-	--ink-soft: #aab4d4;
+	/* Palet Buku Tahunan Putih Bersih & Tinta Aethra */
+	--bg: #ffffff;
+	--surface: #f8fafc;
+	--surface-alt: #f1f5f9;
+	--border: #e2e8f0;
+	--border-strong: #cbd5e1;
+
+	--navy: #0b1628;
+	--navy-mid: #162844;
+	--navy-soft: #334e73;
+
+	--ink: #0f172a;
+	--ink-muted: #475569;
+	--ink-faint: #64748b;
+	--ink-ghost: #cbd5e1;
+
+	--gold: #9e731f;
+	--gold-bright: #cfa144;
+	--gold-soft: #fcf6e8;
 
 	--font-script: 'Great Vibes', cursive;
-	--font-body: 'Outfit Variable', system-ui, sans-serif;
+	--font-body: 'Outfit Variable', system-ui, -apple-system, sans-serif;
 	--font-serif: 'Cormorant Garamond', Georgia, serif;
+	--font-mono: ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
 
-	--radius: 14px;
-	--content-width: 72rem;
+	--radius-sm: 4px;
+	--radius: 8px;
+	--radius-lg: 14px;
+	--radius-pill: 999px;
+	--content-width: 74rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	@view-transition {
+		navigation: auto;
+	}
 }
 
 *,
@@ -31,7 +54,8 @@
 
 html {
 	scroll-behavior: smooth;
-	color-scheme: dark;
+	color-scheme: light;
+	background-color: var(--bg);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -48,89 +72,294 @@ body {
 	flex-direction: column;
 	font-family: var(--font-body);
 	color: var(--ink);
-	background:
-		radial-gradient(ellipse at 20% -10%, var(--navy-600) 0%, transparent 55%),
-		radial-gradient(ellipse at 90% 10%, #16306a 0%, transparent 45%),
-		linear-gradient(180deg, var(--navy-900), var(--navy-950) 70%);
-	background-attachment: fixed;
-	line-height: 1.6;
+	background-color: var(--bg);
+	line-height: 1.65;
+	-webkit-font-smoothing: antialiased;
 }
 
-/* Taburan bintang halus: hanya gradien, tanpa gambar */
-.starfield {
-	position: fixed;
-	inset: 0;
-	z-index: -1;
-	pointer-events: none;
-	background-image:
-		radial-gradient(1.5px 1.5px at 12% 18%, var(--gold-300), transparent),
-		radial-gradient(1px 1px at 28% 62%, #fff, transparent),
-		radial-gradient(1.5px 1.5px at 44% 30%, var(--gold-300), transparent),
-		radial-gradient(1px 1px at 63% 78%, #fff, transparent),
-		radial-gradient(1.5px 1.5px at 78% 22%, var(--gold-300), transparent),
-		radial-gradient(1px 1px at 90% 55%, #fff, transparent),
-		radial-gradient(1px 1px at 8% 86%, #fff, transparent),
-		radial-gradient(1.5px 1.5px at 55% 8%, #fff, transparent);
-	opacity: 0.8;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-	.starfield {
-		animation: twinkle 7s ease-in-out infinite alternate;
-	}
-}
-
-@keyframes twinkle {
-	from {
-		opacity: 0.45;
-	}
-	to {
-		opacity: 0.9;
-	}
-}
-
+/* Tipografi Editorial */
 h1,
 h2,
-h3 {
-	font-family: var(--font-script);
-	font-weight: 400;
-	color: var(--gold-300);
-	line-height: 1.1;
+h3,
+h4 {
+	font-family: var(--font-serif);
+	font-weight: 600;
+	letter-spacing: -0.02em;
+	color: var(--navy);
+	line-height: 1.08;
 	margin: 0 0 0.5em;
 }
 
+h1 em,
+h2 em,
+h3 em {
+	font-style: italic;
+	font-weight: 500;
+	color: var(--navy-soft);
+}
+
 h1 {
-	font-size: clamp(3rem, 9vw, 6rem);
+	font-size: clamp(2.8rem, 7vw, 5rem);
 }
 
 h2 {
-	font-size: clamp(2rem, 5vw, 3.2rem);
+	font-size: clamp(2.1rem, 4.5vw, 3.25rem);
+}
+
+h3 {
+	font-size: clamp(1.45rem, 3vw, 2.2rem);
+}
+
+p {
+	margin: 0 0 1em;
 }
 
 a {
-	color: var(--gold-300);
+	color: var(--navy-mid);
+	text-decoration: underline;
+	text-underline-offset: 3px;
+	transition: color 0.2s ease;
+}
+
+a:hover {
+	color: var(--gold);
 }
 
 a:focus-visible,
-button:focus-visible {
-	outline: 2px solid var(--gold-400);
+button:focus-visible,
+input:focus-visible {
+	outline: 2px solid var(--navy);
 	outline-offset: 3px;
 }
 
+/* Wadah */
 .container {
-	width: min(100% - 2rem, var(--content-width));
+	width: min(100% - 2.5rem, var(--content-width));
 	margin-inline: auto;
+}
+
+/* Tombol */
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	padding: 0.8rem 1.5rem;
+	border-radius: var(--radius-pill);
+	font-family: var(--font-body);
+	font-size: 0.9rem;
+	font-weight: 500;
+	text-decoration: none;
+	transition:
+		background-color 0.2s ease,
+		border-color 0.2s ease,
+		color 0.2s ease,
+		transform 0.2s ease,
+		box-shadow 0.2s ease;
+	cursor: pointer;
+}
+
+.btn-primary {
+	background-color: var(--navy);
+	color: #ffffff;
+	border: 1px solid var(--navy);
+	box-shadow: 0 8px 20px -8px rgba(11, 22, 40, 0.35);
+}
+
+.btn-primary:hover {
+	background-color: var(--navy-mid);
+	border-color: var(--navy-mid);
+	color: #ffffff;
+	transform: translateY(-1px);
+	box-shadow: 0 12px 24px -8px rgba(11, 22, 40, 0.42);
+}
+
+.btn-secondary {
+	background-color: #ffffff;
+	color: var(--navy);
+	border: 1px solid var(--border-strong);
+}
+
+.btn-secondary:hover {
+	background-color: var(--surface);
+	border-color: var(--navy-soft);
+	color: var(--navy);
+	transform: translateY(-1px);
+}
+
+/* Penanda Bab / Eyebrow */
+.eyebrow {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.6rem;
+	font-family: var(--font-body);
+	font-size: 0.72rem;
+	font-weight: 600;
+	letter-spacing: 0.18em;
+	text-transform: uppercase;
+	color: var(--gold);
+	margin: 0 0 0.9rem;
+}
+
+.eyebrow::before {
+	content: '';
+	display: inline-block;
+	width: 1.4rem;
+	height: 1px;
+	background: currentColor;
+}
+
+/* Filter Chips & Kolom Pencarian */
+.chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	padding: 0.48rem 0.95rem;
+	border-radius: var(--radius-pill);
+	border: 1px solid var(--border);
+	background: #ffffff;
+	color: var(--ink-muted);
+	font-family: var(--font-body);
+	font-size: 0.82rem;
+	font-weight: 500;
+	line-height: 1.2;
+	cursor: pointer;
+	transition:
+		background-color 0.2s ease,
+		border-color 0.2s ease,
+		color 0.2s ease,
+		transform 0.2s ease;
+}
+
+.chip:hover {
+	border-color: var(--navy-soft);
+	color: var(--navy);
+	background: var(--surface);
+}
+
+.chip.is-active {
+	background: var(--navy);
+	border-color: var(--navy);
+	color: #ffffff;
+}
+
+.search-field {
+	width: 100%;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-pill);
+	padding: 0.55rem 1rem;
+	font-family: var(--font-body);
+	font-size: 0.88rem;
+	background: var(--surface);
+	color: var(--ink);
+	transition:
+		border-color 0.2s ease,
+		background-color 0.2s ease,
+		box-shadow 0.2s ease;
+}
+
+.search-field::placeholder {
+	color: var(--ink-faint);
+}
+
+.search-field:focus {
+	background: #ffffff;
+	border-color: var(--navy);
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(11, 22, 40, 0.07);
+}
+
+/* Modal Bersama */
+dialog.aethra-dialog {
+	border: 1px solid var(--border);
+	border-radius: 18px;
+	padding: 0;
+	background: #ffffff;
+	color: var(--ink);
+	max-width: 34rem;
+	width: min(100% - 2rem, 34rem);
+	box-shadow: 0 32px 72px -20px rgba(11, 22, 40, 0.24);
+	margin: auto;
+	overflow: visible;
+}
+
+dialog.aethra-dialog::backdrop {
+	background: rgba(11, 22, 40, 0.34);
+	backdrop-filter: blur(6px);
+}
+
+.dialog-panel {
+	padding: clamp(1.4rem, 4vw, 2rem);
+}
+
+/* Kursor Interaktif Desktop */
+.aethra-cursor {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 9999;
+	pointer-events: none;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	border-radius: 999px;
+	border: 1px solid rgba(11, 22, 40, 0.25);
+	background: transparent;
+	transition:
+		width 0.2s ease,
+		height 0.2s ease,
+		padding 0.2s ease,
+		background-color 0.2s ease,
+		border-color 0.2s ease,
+		box-shadow 0.2s ease;
+}
+
+.aethra-cursor-label {
+	display: none;
+	font-family: var(--font-body);
+	font-size: 0.62rem;
+	font-weight: 600;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	white-space: nowrap;
+	color: #ffffff;
+	line-height: 1;
+}
+
+.aethra-cursor.is-labeled {
+	width: auto;
+	height: 28px;
+	padding: 0 0.7rem;
+	background: var(--navy);
+	border-color: var(--navy);
+	box-shadow: 0 10px 24px -8px rgba(11, 22, 40, 0.38);
+}
+
+.aethra-cursor.is-labeled .aethra-cursor-label {
+	display: block;
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+	body.has-cursor .aethra-cursor {
+		display: inline-flex;
+	}
 }
 
 .skip-link {
 	position: absolute;
 	left: -999px;
 	top: 0.5rem;
-	background: var(--gold-400);
-	color: var(--navy-950);
+	background: var(--navy);
+	color: #ffffff;
 	padding: 0.5rem 1rem;
-	border-radius: 8px;
+	border-radius: var(--radius-sm);
 	z-index: 100;
+	font-family: var(--font-body);
+	font-size: 0.82rem;
+	font-weight: 500;
+	text-decoration: none;
 }
 
 .skip-link:focus {

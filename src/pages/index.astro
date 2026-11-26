@@ -1,723 +1,2038 @@
 ---
 import { getCollection } from 'astro:content';
+import { getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Moon from '../components/Moon.astro';
+import Polaroid from '../components/Polaroid.astro';
+import MemberModal from '../components/MemberModal.astro';
+import type { MemberItem } from '../scripts/memberModal';
+import { formatMetaAnggota, getInisial } from '../utils/yearbook';
 
 const TOTAL = 64;
 const peserta = (await getCollection('peserta', ({ data }) => data.setuju)).sort((a, b) =>
 	a.data.nama.localeCompare(b.data.nama, 'id'),
 );
+const kenangan = await getCollection('kenangan');
+const kegiatan = (await getCollection('kegiatan')).sort(
+	(a, b) => b.data.tanggal.getTime() - a.data.tanggal.getTime(),
+);
 
-const inisial = (nama: string) =>
-	nama
-		.split(/\s+/)
-		.filter(Boolean)
-		.slice(0, 2)
-		.map((k) => k[0]!.toUpperCase())
-		.join('');
+const fotoModules = import.meta.glob<{ default: ImageMetadata }>(
+	'../assets/peserta/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}',
+	{ eager: true },
+);
 
-// 64 titik: yang sudah ada datanya tampil inisial, sisanya bintang kosong.
-const titik = Array.from({ length: TOTAL }, (_, i) => {
-	const p = peserta[i];
-	return p ? { label: inisial(p.data.nama), nama: p.data.nama } : null;
-});
+const kontakSheet: MemberItem[] = await Promise.all(
+	Array.from({ length: TOTAL }, async (_, i) => {
+		const p = peserta[i];
+		const no = String(i + 1).padStart(2, '0');
+		if (!p) {
+			return {
+				no,
+				inisial: '',
+				nama: `Kursi #${no}`,
+				meta: 'Menunggu profil teman Aethra 03',
+				tercatat: false,
+			};
+		}
+
+		let fotoUrl: string | undefined;
+		if (p.data.foto) {
+			const match = Object.entries(fotoModules).find(([path]) => path.endsWith(`/${p.data.foto}`));
+			if (match) {
+				const optimized = await getImage({ src: match[1].default, width: 480, height: 480 });
+				fotoUrl = optimized.src;
+			}
+		}
+
+		const meta = formatMetaAnggota(p.data.divisi, p.data.daerah);
+		return {
+			no,
+			inisial: getInisial(p.data.nama),
+			nama: p.data.nama,
+			meta,
+			divisi: p.data.divisi,
+			daerah: p.data.daerah,
+			kalimat: p.data.kalimat,
+			pesan: p.data.pesan,
+			fotoUrl,
+			tercatat: true,
+		};
+	}),
+);
+
+const spotlightAwal = kontakSheet.find((item) => item.tercatat) ?? kontakSheet[0]!;
+const serializedMembers = JSON.stringify(kontakSheet).replace(/</g, '\\u003c');
 
 const manifesto =
-	'Enam puluh empat orang dari banyak daerah, satu periode yang sama. Di sini kita simpan wajah, cerita, dan momen supaya tidak hilang setelah magang selesai.';
+	'Datang dari kota dan kampus yang berbeda, kita pernah berbagi meja, tenggat waktu, dan tawa yang sama. Halaman ini dibuat sederhana supaya kapan pun kita menoleh ke belakang, hangatnya tetap utuh.';
 
-const motto = [
-	{ kata: 'Cipta', isi: 'Karya dan dokumentasi yang kita buat bersama.', href: '/cipta', no: '01' },
-	{ kata: 'Rasa', isi: 'Kenangan, tawa, dan pesan untuk satu sama lain.', href: '/rasa', no: '02' },
-	{ kata: 'Karsa', isi: 'Tekad yang kita bawa pulang setelah semua ini.', href: null, no: '03' },
+const pilars = [
+	{
+		no: '01',
+		bab: 'PILAR PERTAMA',
+		kata: 'Cipta',
+		ringkas: 'Foto kegiatan, karya bareng, dan jejak keseharian selama di kementerian.',
+	},
+	{
+		no: '02',
+		bab: 'PILAR KEDUA',
+		kata: 'Rasa',
+		ringkas: 'Cerita receh, momen canggung minggu pertama, dan pesan untuk satu sama lain.',
+	},
+	{
+		no: '03',
+		bab: 'PILAR KETIGA',
+		kata: 'Karsa',
+		ringkas: 'Jejaring pertemanan dan semangat pengabdian yang ikut pulang ke daerah.',
+	},
+];
+
+const contohKegiatan = kegiatan[0];
+const contohKenangan = kenangan[0];
+
+const babArsip = [
+	{
+		id: 'rasi',
+		nomor: 'BAGIAN 01',
+		halaman: `${peserta.length} / 64 Teman`,
+		judul: 'Rasi Aethra',
+		sub: 'Kenalan Sama 64 Teman Seangkatan',
+		deskripsi:
+			'Foto, kota asal, unit penempatan, dan satu hal menarik dari tiap teman Masadagri Batch 3.',
+		href: '/rasi',
+	},
+	{
+		id: 'rasa',
+		nomor: 'BAGIAN 02',
+		halaman: `${kenangan.length} Cerita`,
+		judul: 'Jejak Rasa',
+		sub: 'Dinding Cerita & Pesan Hangat',
+		deskripsi:
+			'Kejadian paling berkesan di ruang kerja sampai pesan tulus yang sempat tertinggal di grup.',
+		href: '/rasa',
+	},
+	{
+		id: 'cipta',
+		nomor: 'BAGIAN 03',
+		halaman: `${kegiatan.length} Agenda`,
+		judul: 'Galeri Cipta',
+		sub: 'Album Kegiatan & Momen Bareng',
+		deskripsi:
+			'Kumpulan foto kegiatan resmi, diskusi lintas divisi, hingga potret santai sepulang kantor.',
+		href: '/cipta',
+	},
+] as const;
+
+const marqueeItems = [
+	'Cipta',
+	'Rasa',
+	'Karsa',
+	'Aethra 03',
+	'64 Teman Seangkatan',
+	'Masadagri Batch 3',
 ];
 ---
 
 <BaseLayout>
 	<!-- 1. HERO -->
 	<section class="hero" data-hero>
-		<div class="hero-inner container">
-			<p class="eyebrow" data-rise>Masadagri · Kementerian Dalam Negeri · Batch 3</p>
+		<div class="container hero-layout">
+			<div class="hero-content">
+				<p class="eyebrow" data-rise>Catatan Angkatan · Masadagri Batch 3</p>
 
-			<h1 class="hero-title" aria-label="Aethra 03">
-				<span class="word-script" data-rise>Aethra</span>
-				<span class="word-num" data-rise>03</span>
-			</h1>
+				<h1 class="hero-title" data-rise>
+					<span class="hero-brand-line">
+						<span class="hero-script">Aethra</span>
+						<span class="hero-num">03</span>
+					</span>
+					<span class="hero-sub">
+						Enam puluh empat kepala, <em>ribuan cerita</em> dari satu masa magang yang sama.
+					</span>
+				</h1>
 
-			<p class="hero-lead" data-rise>
-				Dokumentasi angkatan, dibuat oleh peserta untuk peserta.{' '}
-				<em>Cipta · Rasa · Karsa.</em>
-			</p>
+				<p class="hero-lead" data-rise>
+					Tempat kita menyimpan wajah teman seperjuangan, obrolan receh di sela kerjaan, sampai
+					momen kecil yang bakal dirindukan waktu masing-masing kembali melangkah.
+				</p>
 
-			<div class="hero-cta" data-rise>
-				<a class="btn btn-gold" href="/rasi">Lihat 64 wajah</a>
-				<a class="btn btn-ghost" href="#cerita">Gulir cerita kami ↓</a>
+				<div class="hero-cta" data-rise>
+					<a class="btn btn-primary" href="/rasi" data-magnetic data-cursor="Jelajahi">
+						Kenalan Sama 64 Teman →
+					</a>
+					<a class="btn btn-secondary" href="#cerita" data-magnetic>
+						Baca Pengantar ↓
+					</a>
+				</div>
+
+				<dl class="hero-metrics" data-rise>
+					<div class="metric-item">
+						<dt>Teman Seangkatan</dt>
+						<dd>64</dd>
+					</div>
+					<div class="metric-item">
+						<dt>Cipta · Rasa · Karsa</dt>
+						<dd>03</dd>
+					</div>
+					<div class="metric-item">
+						<dt>Angkatan Masadagri</dt>
+						<dd>Batch 3</dd>
+					</div>
+				</dl>
 			</div>
-		</div>
 
-		<!-- Kartu melayang miring -->
-		<div class="float-layer" aria-hidden="true">
-			<div class="float-card fc-1" data-float="-1">
-				<span class="fc-kicker">Rasa</span>
-				<span class="fc-text">“Hari pertama semua salah masuk ruangan.”</span>
-			</div>
-			<div class="float-card fc-2" data-float="1.4">
-				<span class="fc-kicker">Cipta</span>
-				<span class="fc-big">Momen</span>
-			</div>
-			<div class="float-card fc-3" data-float="-0.8">
-				<span class="fc-kicker">Rasi</span>
-				<span class="fc-dots">
-					{Array.from({ length: 9 }, () => <i />)}
-				</span>
-			</div>
-			<div class="moon-wrap" data-float="0.6"><Moon /></div>
-		</div>
+			<!-- Visual Kanan: Meja Polaroid Interaktif (Draggable & Shuffleable) -->
+			<div class="hero-desk">
+				<div class="polaroid-deck">
+					<div class="deck-card" data-deck-card data-cursor="Geser">
+						<Polaroid
+							variant="crest"
+							caption="Aethra 03"
+							subcaption="Cipta · Rasa · Karsa"
+							tag="BATCH 03"
+							rotation={-4}
+						/>
+					</div>
+					<div class="deck-card" data-deck-card data-cursor="Geser">
+						<Polaroid
+							variant="warm"
+							caption="Hari-Hari Pertama"
+							subcaption="Dari canggung jadi satu frekuensi"
+							tag="AWAL"
+							rotation={5}
+						/>
+					</div>
+					<div class="deck-card" data-deck-card data-cursor="Geser">
+						<Polaroid
+							variant="editorial"
+							caption="Di Sela Kesibukan"
+							subcaption="Kopi sore, diskusi, dan tawa bareng"
+							tag="MOMEN"
+							rotation={-2}
+						/>
+					</div>
+				</div>
 
-		<!-- Stiker segel -->
-		<div class="seal" aria-hidden="true">
-			<svg viewBox="0 0 200 200" class="seal-ring">
-				<defs>
-					<path id="seal-path" d="M100,100 m-78,0 a78,78 0 1,1 156,0 a78,78 0 1,1 -156,0" />
-				</defs>
-				<text>
-					<textPath href="#seal-path">AETHRA 03 · CIPTA · RASA · KARSA · MASADAGRI ·</textPath>
-				</text>
-			</svg>
-			<span class="seal-num">64<small>peserta</small></span>
+				<div class="aethra-seal" data-stamp aria-hidden="true">
+					<svg viewBox="0 0 160 160" class="seal-svg">
+						<defs>
+							<path
+								id="aethra-seal-path"
+								d="M80,80 m-58,0 a58,58 0 1,1 116,0 a58,58 0 1,1 -116,0"
+							></path>
+						</defs>
+						<circle cx="80" cy="80" r="74" class="seal-ring-outer"></circle>
+						<circle cx="80" cy="80" r="46" class="seal-ring-inner"></circle>
+						<text class="seal-text">
+							<textPath href="#aethra-seal-path">
+								AETHRA 03 ✦ CIPTA RASA KARSA ✦ MASADAGRI ✦
+							</textPath>
+						</text>
+					</svg>
+					<div class="seal-center">
+						<span class="seal-top">ANGKATAN</span>
+						<span class="seal-big">64</span>
+						<span class="seal-bottom">REKAN</span>
+					</div>
+				</div>
+
+				<div class="deck-controls">
+					<span class="deck-counter" data-deck-counter>01 / 03</span>
+					<button type="button" class="chip" data-deck-shuffle>Balik Foto ↻</button>
+					<button type="button" class="chip" data-deck-reset hidden>Rapikan</button>
+				</div>
+			</div>
 		</div>
 	</section>
 
-	<!-- 2. MANIFESTO: kata menyala saat di-scroll -->
-	<section id="cerita" class="manifesto container" data-manifesto>
-		<p class="label">Tentang kami</p>
-		<p class="manifesto-text">
-			{manifesto.split(' ').map((w) => <span class="mw">{w} </span>)}
-		</p>
+	<!-- 2. PITA TEKS BERJALAN -->
+	<div class="marquee-band" aria-hidden="true">
+		<div class="marquee-track">
+			<ul class="marquee-list">
+				{
+					marqueeItems.map((item) => (
+						<li class="marquee-item">
+							<span>{item}</span>
+							<span class="marquee-star">✦</span>
+						</li>
+					))
+				}
+			</ul>
+			<ul class="marquee-list">
+				{
+					marqueeItems.map((item) => (
+						<li class="marquee-item">
+							<span>{item}</span>
+							<span class="marquee-star">✦</span>
+						</li>
+					))
+				}
+			</ul>
+		</div>
+	</div>
+
+	<!-- 3. MANIFESTO / PENGANTAR -->
+	<section id="cerita" class="manifesto-section" data-manifesto>
+		<div class="container manifesto-layout">
+			<div class="manifesto-rail">
+				<p class="eyebrow">01 — Pengantar</p>
+				<p class="rail-note">
+					Sepatah Kata
+					<br />
+					untuk Aethra 03
+				</p>
+				<div class="rail-meter" aria-hidden="true">
+					<span class="rail-meter-bar" data-manifesto-bar></span>
+				</div>
+			</div>
+
+			<div class="manifesto-content">
+				<blockquote class="manifesto-quote">
+					<p class="manifesto-body">
+						{manifesto.split(' ').map((kata) => <span class="mw">{kata} </span>)}
+					</p>
+				</blockquote>
+				<div class="manifesto-footer">
+					<span class="sign-line">— Teman-Teman Aethra 03</span>
+					<span class="sign-location">Jakarta Pusat</span>
+				</div>
+			</div>
+		</div>
 	</section>
 
-	<!-- 3. MOTTO -->
-	<section class="motto container" aria-labelledby="motto-judul">
-		<h2 id="motto-judul" class="sr-only">Motto Aethra 03</h2>
-		{
-			motto.map((m) => (
-				<article class="motto-row" data-motto>
-					<span class="motto-no">{m.no}</span>
-					<h3 class="motto-word">{m.kata}</h3>
-					<p class="motto-isi">{m.isi}</p>
-					{m.href ? (
-						<a class="motto-link" href={m.href} aria-label={`Buka ${m.kata}`}>
-							→
+	<!-- 4. TIGA PILAR INTERAKTIF -->
+	<section class="motto-section" aria-labelledby="motto-judul">
+		<div class="container">
+			<div class="section-head">
+				<p class="eyebrow">02 — Motto Kita</p>
+				<h2 id="motto-judul" class="section-title">
+					Tiga Kata di Balik <em>Nama Aethra</em>
+				</h2>
+				<p class="section-desc">
+					Pilih salah satu pilar di bawah untuk mengintip langsung isi kenangan yang tersimpan.
+				</p>
+			</div>
+
+			<div class="pilar-grid">
+				<div class="pilar-list" role="tablist" aria-label="Pilar Cipta Rasa Karsa">
+					{
+						pilars.map((p, idx) => (
+							<button
+								type="button"
+								class:list={['pilar-btn', { 'is-active': idx === 0 }]}
+								data-pilar-btn={idx}
+								data-cursor="Pilih"
+								aria-pressed={idx === 0 ? 'true' : 'false'}
+							>
+								<div class="pilar-btn-meta">
+									<span class="pilar-bab">{p.bab}</span>
+									<span class="pilar-no">{p.no}</span>
+								</div>
+								<div class="pilar-btn-body">
+									<span class="pilar-word">{p.kata}</span>
+									<span class="pilar-summary">{p.ringkas}</span>
+								</div>
+								<span class="pilar-arrow" aria-hidden="true">
+									→
+								</span>
+							</button>
+						))
+					}
+				</div>
+
+				<div class="pilar-stage">
+					<!-- Panel 0: Cipta -->
+					<div class="pilar-panel" data-pilar-panel="0">
+						<div class="panel-top">
+							<span class="panel-badge">01 · CIPTA</span>
+							<span class="panel-stat">{kegiatan.length} Agenda Kegiatan</span>
+						</div>
+						<div class="panel-visual" aria-hidden="true">
+							<svg viewBox="0 0 280 120" fill="none">
+								<rect
+									x="22"
+									y="20"
+									width="104"
+									height="78"
+									rx="6"
+									fill="#f1f5f9"
+									stroke="#cbd5e1"
+									transform="rotate(-4 74 59)"
+								></rect>
+								<rect
+									x="136"
+									y="18"
+									width="120"
+									height="84"
+									rx="6"
+									fill="#0b1628"
+									transform="rotate(3 196 60)"
+								></rect>
+								<circle cx="176" cy="46" r="10" fill="#cfa144"></circle>
+								<path
+									d="M148 86 L176 58 L198 78 L216 64 L242 86"
+									stroke="#ffffff"
+									stroke-width="1.5"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								></path>
+							</svg>
+						</div>
+						<h3 class="panel-title">Foto &amp; Dokumentasi Kegiatan</h3>
+						<p class="panel-desc">
+							{
+								contohKegiatan
+									? `Terbaru di album: "${contohKegiatan.data.judul}". ${contohKegiatan.data.deskripsi ?? ''}`
+									: 'Rekam jejak foto dan cuplikan kegiatan bersama selama masa magang.'
+							}
+						</p>
+						<a class="btn btn-primary btn-sm" href="/cipta">Buka Galeri Cipta →</a>
+					</div>
+
+					<!-- Panel 1: Rasa -->
+					<div class="pilar-panel" data-pilar-panel="1" hidden>
+						<div class="panel-top">
+							<span class="panel-badge">02 · RASA</span>
+							<span class="panel-stat">{kenangan.length} Cerita Masuk</span>
+						</div>
+						<div class="panel-quote-box">
+							<p class="panel-quote">
+								“{contohKenangan?.data.teks ?? 'Cerita kecil yang bikin masa magang susah dilupakan.'}”
+							</p>
+							<span class="panel-quote-author">
+								— {contohKenangan?.data.nama ?? 'Teman Aethra 03'}
+							</span>
+						</div>
+						<h3 class="panel-title">Cerita &amp; Pesan Antarteman</h3>
+						<p class="panel-desc">
+							Potongan kisah spontan, tawa di sela tugas, dan ucapan tulus yang dikirim teman-teman
+							Aethra 03.
+						</p>
+						<a class="btn btn-primary btn-sm" href="/rasa">Baca Jejak Rasa →</a>
+					</div>
+
+					<!-- Panel 2: Karsa -->
+					<div class="pilar-panel" data-pilar-panel="2" hidden>
+						<div class="panel-top">
+							<span class="panel-badge">03 · KARSA</span>
+							<span class="panel-stat">64 Kursi Angkatan</span>
+						</div>
+						<div class="panel-crest-box" aria-hidden="true">
+							<span class="crest-star">✦</span>
+							<p class="crest-line">
+								Dari Jakarta kembali ke kota masing-masing dengan cerita, jejaring, dan semangat
+								yang tetap menyambung.
+							</p>
+						</div>
+						<h3 class="panel-title">Jejaring yang Tetap Terhubung</h3>
+						<p class="panel-desc">
+							Walau penempatan berbeda dan nanti berpisah jarak, semua kenalan satu angkatan
+							tetap bisa disapa kapan saja di Rasi Aethra.
+						</p>
+						<a class="btn btn-primary btn-sm" href="/rasi">Kenali 64 Teman →</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- 5. MOSAIK 64 REKAN INTERAKTIF -->
+	<section class="mosaic-section" data-sheet aria-labelledby="mosaic-judul">
+		<div class="container">
+			<div class="mosaic-head">
+				<div>
+					<p class="eyebrow">03 — Wajah Angkatan</p>
+					<h2 id="mosaic-judul" class="section-title">
+						Satu Angkatan dalam <em>64 Petak</em>
+					</h2>
+					<p class="section-desc">
+						Cari nama, saring yang sudah terisi, atau klik petak mana saja untuk membaca kartu
+						teman.
+					</p>
+				</div>
+				<div class="mosaic-status">
+					<span class="status-count">{peserta.length} / 64</span>
+					<span class="status-label">Profil Masuk</span>
+				</div>
+			</div>
+
+			<div class="mosaic-frame">
+				<div class="mosaic-toolbar">
+					<div class="mosaic-filters">
+						<button type="button" class="chip is-active" data-mosaic-filter="all">
+							Semua (64)
+						</button>
+						<button type="button" class="chip" data-mosaic-filter="filled">
+							Sudah Masuk ({peserta.length})
+						</button>
+						<button type="button" class="chip" data-mosaic-wave data-cursor="Mainkan">
+							Gelombang ✦
+						</button>
+					</div>
+					<div class="mosaic-search-wrap">
+						<label class="sr-only" for="mosaic-search">Cari teman di mosaik 64</label>
+						<input
+							id="mosaic-search"
+							type="search"
+							class="search-field"
+							placeholder="Cari nama atau kota asal..."
+							data-mosaic-search
+						/>
+					</div>
+				</div>
+
+				<div class="mosaic-spotlight" aria-live="polite">
+					<div class="spotlight-info">
+						<span class="spotlight-no" data-spotlight-no>#{spotlightAwal.no}</span>
+						<div class="spotlight-copy">
+							<strong class="spotlight-name" data-spotlight-name>{spotlightAwal.nama}</strong>
+							<span class="spotlight-meta" data-spotlight-meta>{spotlightAwal.meta}</span>
+						</div>
+					</div>
+					<div class="spotlight-actions">
+						<button type="button" class="chip" data-spotlight-open>Buka Kartu →</button>
+						<a class="spotlight-link" href="/rasi">Lihat Semua di Rasi</a>
+					</div>
+				</div>
+
+				<div class="mosaic-grid" role="list" aria-label="Kisi 64 rekan Aethra 03">
+					{
+						kontakSheet.map((item, idx) => (
+							<div role="listitem">
+								<button
+									type="button"
+									class:list={[
+										'mosaic-tile',
+										{ 'is-filled': item.tercatat, 'is-active': item.no === spotlightAwal.no },
+									]}
+									data-index={idx}
+									data-no={item.no}
+									data-nama={item.nama}
+									data-meta={item.meta}
+									data-filled={item.tercatat ? '1' : '0'}
+									data-search={`${item.nama} ${item.meta} ${item.kalimat ?? ''}`.toLowerCase()}
+									data-cursor="Lihat"
+									aria-label={`Slot ${item.no}: ${item.nama}`}
+								>
+									<span class="tile-no">{item.no}</span>
+									{item.tercatat ? (
+										<>
+											<span class="tile-initials">{item.inisial}</span>
+											<span class="tile-dot" aria-hidden="true" />
+										</>
+									) : (
+										<span class="tile-star" aria-hidden="true">
+											✦
+										</span>
+									)}
+								</button>
+							</div>
+						))
+					}
+				</div>
+
+				<div class="mosaic-footer">
+					<p class="mosaic-hint">
+						Sentuh petak untuk pratinjau singkat, atau klik untuk membuka profil lengkap beserta
+						pesannya.
+					</p>
+					<a class="btn btn-primary" href="/rasi" data-magnetic>Buka Rasi Aethra →</a>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- 6. JELAJAHI BUKU TAHUNAN -->
+	<section class="index-section" aria-labelledby="index-judul">
+		<div class="container">
+			<div class="section-head">
+				<p class="eyebrow">04 — Ruang Dokumentasi</p>
+				<h2 id="index-judul" class="section-title">
+					Mau Buka <em>Bagian Mana Dulu?</em>
+				</h2>
+				<p class="section-desc">
+					Pilih halaman di bawah untuk melihat profil teman, cerita kenangan, atau album kegiatan.
+				</p>
+			</div>
+
+			<div class="index-grid">
+				{
+					babArsip.map((bab) => (
+						<a class="index-card" href={bab.href} data-card data-tilt data-cursor="Buka">
+							<div class="card-illus" aria-hidden="true">
+								{bab.id === 'rasi' ? (
+									<svg viewBox="0 0 180 76" fill="none">
+										<rect x="20" y="14" width="14" height="14" rx="3" fill="#0b1628" />
+										<rect x="42" y="14" width="14" height="14" rx="3" fill="#e2e8f0" />
+										<rect x="64" y="14" width="14" height="14" rx="3" fill="#e2e8f0" />
+										<rect x="86" y="14" width="14" height="14" rx="3" fill="#cfa144" />
+										<rect x="20" y="36" width="14" height="14" rx="3" fill="#e2e8f0" />
+										<rect x="42" y="36" width="14" height="14" rx="3" fill="#0b1628" />
+										<rect x="64" y="36" width="14" height="14" rx="3" fill="#e2e8f0" />
+										<rect x="86" y="36" width="14" height="14" rx="3" fill="#e2e8f0" />
+										<circle cx="144" cy="36" r="16" stroke="#cbd5e1" stroke-dasharray="3 3" />
+										<path
+											d="M144 24 Q145 35 156 36 Q145 37 144 48 Q143 37 132 36 Q143 35 144 24 Z"
+											fill="#9e731f"
+										/>
+									</svg>
+								) : bab.id === 'rasa' ? (
+									<svg viewBox="0 0 180 76" fill="none">
+										<rect
+											x="22"
+											y="14"
+											width="136"
+											height="48"
+											rx="6"
+											fill="#ffffff"
+											stroke="#cbd5e1"
+										/>
+										<line x1="36" y1="29" x2="112" y2="29" stroke="#0b1628" stroke-width="1.5" />
+										<line x1="36" y1="39" x2="96" y2="39" stroke="#94a3b8" stroke-width="1.5" />
+										<line x1="36" y1="49" x2="78" y2="49" stroke="#cbd5e1" stroke-width="1.5" />
+										<circle cx="136" cy="38" r="10" fill="#fcf6e8" stroke="#9e731f" />
+									</svg>
+								) : (
+									<svg viewBox="0 0 180 76" fill="none">
+										<rect
+											x="24"
+											y="18"
+											width="56"
+											height="42"
+											rx="4"
+											fill="#f1f5f9"
+											stroke="#cbd5e1"
+											transform="rotate(-5 52 39)"
+										/>
+										<rect
+											x="94"
+											y="16"
+											width="62"
+											height="46"
+											rx="4"
+											fill="#0b1628"
+											transform="rotate(4 125 39)"
+										/>
+										<circle cx="132" cy="34" r="6" fill="#cfa144" />
+									</svg>
+								)}
+							</div>
+
+							<div class="card-head">
+								<span class="card-vol">{bab.nomor}</span>
+								<span class="card-page">{bab.halaman}</span>
+							</div>
+
+							<div class="card-body">
+								<h3 class="card-title">{bab.judul}</h3>
+								<p class="card-sub">{bab.sub}</p>
+								<p class="card-desc">{bab.deskripsi}</p>
+							</div>
+
+							<div class="card-foot">
+								<span class="card-link-text">Buka Bagian →</span>
+							</div>
 						</a>
-					) : (
-						<span class="motto-link is-soon" title="Segera hadir">
-							·
-						</span>
-					)}
-				</article>
-			))
-		}
-	</section>
-
-	<!-- 4. KONSTELASI 64 -->
-	<section class="rasi container" data-rasi aria-labelledby="rasi-judul">
-		<div class="rasi-head">
-			<p class="label">Rasi Aethra</p>
-			<h2 id="rasi-judul">Enam puluh empat bintang, satu rasi.</h2>
-			<p class="muted">
-				Setiap titik adalah satu teman. Foto akan menggantikan inisial begitu dikirim.
-			</p>
-		</div>
-		<ol class="rasi-grid" aria-label={`${peserta.length} dari ${TOTAL} peserta sudah bergabung`}>
-			{
-				titik.map((t) => (
-					<li class:list={['star', { 'is-empty': !t }]} title={t?.nama}>
-						{t ? (
-							<span>{t.label}</span>
-						) : (
-							<span class="sr-only">Belum bergabung</span>
-						)}
-					</li>
-				))
-			}
-		</ol>
-		<a class="btn btn-gold rasi-cta" href="/rasi">Kenali semuanya</a>
-	</section>
-
-	<!-- 5. BENTO TAUTAN -->
-	<section class="bento container" aria-labelledby="bento-judul">
-		<h2 id="bento-judul">Jelajahi</h2>
-		<div class="bento-grid">
-			<a class="tile tile-rasi" href="/rasi" data-tile>
-				<span class="tile-no">01</span>
-				<span class="tile-title">Rasi Aethra</span>
-				<span class="tile-sub">64 wajah, nama, dan pesan.</span>
-			</a>
-			<a class="tile tile-rasa" href="/rasa" data-tile>
-				<span class="tile-no">02</span>
-				<span class="tile-title">Rasa</span>
-				<span class="tile-sub">Jejak kita: cerita lucu sampai haru.</span>
-			</a>
-			<a class="tile tile-cipta" href="/cipta" data-tile>
-				<span class="tile-no">03</span>
-				<span class="tile-title">Cipta</span>
-				<span class="tile-sub">Galeri foto dan video per kegiatan.</span>
-			</a>
+					))
+				}
+			</div>
 		</div>
 	</section>
+
+	<MemberModal />
+	<script type="application/json" id="aethra-members-data" set:html={serializedMembers} />
 </BaseLayout>
 
 <script>
+	import { gsap } from 'gsap';
+	import { Draggable } from 'gsap/Draggable';
 	import { initMotion } from '../scripts/motion';
+	import { initTiltCards } from '../scripts/interactions';
+	import { setupMemberModal, type MemberItem } from '../scripts/memberModal';
 
-	initMotion((gsap) => {
-		// Hero: muncul berurutan
-		gsap.from('[data-rise]', {
-			y: 40,
+	gsap.registerPlugin(Draggable);
+
+	const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+	// 1. Meja Polaroid Interaktif (Draggable & Shuffleable)
+	const deckCards = Array.from(document.querySelectorAll<HTMLElement>('[data-deck-card]'));
+	const counterEl = document.querySelector<HTMLElement>('[data-deck-counter]');
+	const shuffleBtn = document.querySelector<HTMLButtonElement>('[data-deck-shuffle]');
+	const resetBtn = document.querySelector<HTMLButtonElement>('[data-deck-reset]');
+
+	if (deckCards.length > 0) {
+		const order = deckCards.map((_, i) => i);
+		const ranks = [
+			{ x: 0, y: 0, scale: 1, zIndex: 3 },
+			{ x: 24, y: 20, scale: 0.96, zIndex: 2 },
+			{ x: -18, y: 38, scale: 0.92, zIndex: 1 },
+		];
+
+		const updateCounter = () => {
+			if (!counterEl) return;
+			const activeNum = String((order[0] ?? 0) + 1).padStart(2, '0');
+			const totalNum = String(deckCards.length).padStart(2, '0');
+			counterEl.textContent = `${activeNum} / ${totalNum}`;
+		};
+
+		const layoutDeck = (animate = true) => {
+			order.forEach((cardIdx, rank) => {
+				const el = deckCards[cardIdx];
+				const pose = ranks[rank] ?? ranks[ranks.length - 1]!;
+				if (!el) return;
+				el.style.zIndex = String(pose.zIndex);
+				if (animate && !reducedMotion) {
+					gsap.to(el, {
+						x: pose.x,
+						y: pose.y,
+						scale: pose.scale,
+						rotation: 0,
+						opacity: 1,
+						duration: 0.45,
+						ease: 'power3.out',
+					});
+				} else {
+					gsap.set(el, {
+						x: pose.x,
+						y: pose.y,
+						scale: pose.scale,
+						rotation: 0,
+						opacity: 1,
+					});
+				}
+			});
+			updateCounter();
+		};
+
+		let shuffling = false;
+		const shuffleDeck = () => {
+			if (shuffling || order.length < 2) return;
+			if (reducedMotion) {
+				const first = order.shift()!;
+				order.push(first);
+				layoutDeck(false);
+				if (resetBtn) resetBtn.hidden = true;
+				return;
+			}
+			shuffling = true;
+			const frontEl = deckCards[order[0]!];
+			if (!frontEl) {
+				shuffling = false;
+				return;
+			}
+			gsap.to(frontEl, {
+				x: 95,
+				rotation: 8,
+				opacity: 0.72,
+				duration: 0.22,
+				ease: 'power2.in',
+				onComplete: () => {
+					const first = order.shift()!;
+					order.push(first);
+					layoutDeck(true);
+					if (resetBtn) resetBtn.hidden = true;
+					shuffling = false;
+				},
+			});
+		};
+
+		layoutDeck(false);
+
+		shuffleBtn?.addEventListener('click', shuffleDeck);
+		resetBtn?.addEventListener('click', () => {
+			layoutDeck(true);
+			resetBtn.hidden = true;
+		});
+
+		if (!reducedMotion) {
+			Draggable.create(deckCards, {
+				bounds: '.hero-desk',
+				onPress() {
+					(this.target as HTMLElement).style.zIndex = '20';
+				},
+				onDrag() {
+					if (resetBtn) resetBtn.hidden = false;
+				},
+				onClick() {
+					shuffleDeck();
+				},
+			});
+		} else {
+			deckCards.forEach((card) => card.addEventListener('click', shuffleDeck));
+		}
+	}
+
+	// 2. Switcher Tiga Pilar
+	const pilarButtons = document.querySelectorAll<HTMLButtonElement>('[data-pilar-btn]');
+	const pilarPanels = document.querySelectorAll<HTMLElement>('[data-pilar-panel]');
+	let activePilar = '0';
+
+	const setPilar = (idx: string) => {
+		if (idx === activePilar) return;
+		activePilar = idx;
+
+		pilarButtons.forEach((btn) => {
+			const isActive = btn.dataset.pilarBtn === idx;
+			btn.classList.toggle('is-active', isActive);
+			btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+		});
+
+		pilarPanels.forEach((panel) => {
+			const match = panel.dataset.pilarPanel === idx;
+			panel.hidden = !match;
+			if (match && !reducedMotion) {
+				gsap.fromTo(panel, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.28, ease: 'power2.out' });
+			}
+		});
+	};
+
+	pilarButtons.forEach((btn) => {
+		const idx = btn.dataset.pilarBtn ?? '0';
+		btn.addEventListener('click', () => setPilar(idx));
+		btn.addEventListener('mouseenter', () => setPilar(idx));
+		btn.addEventListener('focus', () => setPilar(idx));
+	});
+
+	// 3. Mosaik 64 Interaktif + Filter/Search/Wave + Modal Profil
+	const membersDataEl = document.getElementById('aethra-members-data');
+	const members: MemberItem[] = membersDataEl?.textContent ? JSON.parse(membersDataEl.textContent) : [];
+	const modal = setupMemberModal(members);
+
+	const spotlightNo = document.querySelector<HTMLElement>('[data-spotlight-no]');
+	const spotlightName = document.querySelector<HTMLElement>('[data-spotlight-name]');
+	const spotlightMeta = document.querySelector<HTMLElement>('[data-spotlight-meta]');
+	const spotlightOpenBtn = document.querySelector<HTMLButtonElement>('[data-spotlight-open]');
+	const tiles = Array.from(document.querySelectorAll<HTMLButtonElement>('.mosaic-tile'));
+	const mosaicFilterBtns = document.querySelectorAll<HTMLButtonElement>('[data-mosaic-filter]');
+	const mosaicSearchInput = document.querySelector<HTMLInputElement>('[data-mosaic-search]');
+	const waveBtn = document.querySelector<HTMLButtonElement>('[data-mosaic-wave]');
+
+	let currentSpotlightIndex = Math.max(
+		0,
+		members.findIndex((m) => m.tercatat),
+	);
+	let activeMosaicFilter = 'all';
+	let activeSearch = '';
+
+	const setSpotlight = (tile: HTMLButtonElement) => {
+		const idx = Number(tile.dataset.index ?? 0);
+		const no = tile.dataset.no ?? '';
+		const nama = tile.dataset.nama ?? '';
+		const meta = tile.dataset.meta ?? '';
+
+		currentSpotlightIndex = idx;
+		if (spotlightNo) spotlightNo.textContent = `#${no}`;
+		if (spotlightName) spotlightName.textContent = nama;
+		if (spotlightMeta) spotlightMeta.textContent = meta;
+
+		tiles.forEach((el) => el.classList.toggle('is-active', el === tile));
+	};
+
+	const applyMosaicFilters = () => {
+		const q = activeSearch.trim().toLowerCase();
+		tiles.forEach((tile) => {
+			const filled = tile.dataset.filled === '1';
+			const text = tile.dataset.search ?? '';
+			const filterPass = activeMosaicFilter === 'all' || filled;
+			const searchPass = !q || text.includes(q);
+			const visible = filterPass && searchPass;
+
+			tile.classList.toggle('is-dimmed', !visible);
+			tile.classList.toggle('is-match', Boolean(q && visible));
+		});
+	};
+
+	tiles.forEach((tile) => {
+		tile.addEventListener('mouseenter', () => setSpotlight(tile));
+		tile.addEventListener('focus', () => setSpotlight(tile));
+		tile.addEventListener('click', () => {
+			setSpotlight(tile);
+			modal.openAt(Number(tile.dataset.index ?? 0));
+		});
+	});
+
+	spotlightOpenBtn?.addEventListener('click', () => {
+		modal.openAt(currentSpotlightIndex);
+	});
+
+	mosaicFilterBtns.forEach((btn) => {
+		btn.addEventListener('click', () => {
+			activeMosaicFilter = btn.dataset.mosaicFilter ?? 'all';
+			mosaicFilterBtns.forEach((b) => b.classList.toggle('is-active', b === btn));
+			applyMosaicFilters();
+		});
+	});
+
+	mosaicSearchInput?.addEventListener('input', () => {
+		activeSearch = mosaicSearchInput.value;
+		applyMosaicFilters();
+	});
+
+	waveBtn?.addEventListener('click', () => {
+		if (reducedMotion) return;
+		gsap.fromTo(
+			tiles,
+			{ scale: 1 },
+			{
+				scale: 1.09,
+				duration: 0.24,
+				yoyo: true,
+				repeat: 1,
+				ease: 'power2.inOut',
+				stagger: { amount: 0.55, grid: [8, 8], from: 'center' },
+			},
+		);
+	});
+
+	// 4. Tilt Cards & Animasi Scroll
+	initTiltCards('[data-tilt]');
+
+	initMotion((gsapInstance) => {
+		gsapInstance.from('[data-rise]', {
+			y: 26,
+			opacity: 0,
+			duration: 0.85,
+			ease: 'power3.out',
+			stagger: 0.08,
+		});
+
+		gsapInstance.from('.polaroid-deck', {
+			y: 36,
 			opacity: 0,
 			duration: 1,
 			ease: 'power3.out',
-			stagger: 0.12,
+			delay: 0.2,
 		});
-		gsap.from('.float-card, .moon-wrap', {
-			y: 80,
+
+		gsapInstance.from('[data-stamp]', {
+			scale: 0.6,
+			rotation: -24,
 			opacity: 0,
-			duration: 1.4,
-			ease: 'power3.out',
-			stagger: 0.15,
-			delay: 0.3,
-		});
-		gsap.from('.seal', { scale: 0.4, opacity: 0, duration: 1, ease: 'back.out(1.7)', delay: 0.9 });
-
-		// Hero: kartu bergerak beda kecepatan saat di-scroll (parallax)
-		document.querySelectorAll<HTMLElement>('[data-float]').forEach((el) => {
-			const speed = Number(el.dataset.float);
-			gsap.to(el, {
-				yPercent: -60 * speed,
-				ease: 'none',
-				scrollTrigger: { trigger: '[data-hero]', start: 'top top', end: 'bottom top', scrub: true },
-			});
+			duration: 0.9,
+			ease: 'back.out(1.5)',
+			delay: 0.45,
 		});
 
-		// Manifesto: kata menyala satu per satu
-		gsap.fromTo(
+		gsapInstance.fromTo(
 			'.mw',
-			{ opacity: 0.15 },
+			{ color: '#cbd5e1' },
 			{
-				opacity: 1,
+				color: '#0b1628',
 				ease: 'none',
 				stagger: 0.05,
 				scrollTrigger: {
 					trigger: '[data-manifesto]',
-					start: 'top 75%',
-					end: 'bottom 45%',
+					start: 'top 78%',
+					end: 'bottom 48%',
 					scrub: true,
 				},
 			},
 		);
 
-		// Motto: baris masuk satu per satu
-		gsap.utils.toArray<HTMLElement>('[data-motto]').forEach((row) => {
-			gsap.from(row.children, {
-				y: 60,
-				opacity: 0,
-				duration: 0.9,
-				ease: 'power3.out',
-				stagger: 0.08,
-				scrollTrigger: { trigger: row, start: 'top 82%' },
-			});
-		});
+		gsapInstance.fromTo(
+			'[data-manifesto-bar]',
+			{ scaleX: 0 },
+			{
+				scaleX: 1,
+				ease: 'none',
+				scrollTrigger: {
+					trigger: '[data-manifesto]',
+					start: 'top 78%',
+					end: 'bottom 48%',
+					scrub: true,
+				},
+			},
+		);
 
-		// Konstelasi: bintang berhamburan lalu berkumpul membentuk kisi 8x8
-		const stars = gsap.utils.toArray<HTMLElement>('.star');
-		const spread = Math.min(260, window.innerWidth * 0.3);
-		gsap.from(stars, {
-			x: () => gsap.utils.random(-spread, spread),
-			y: () => gsap.utils.random(-spread * 0.8, spread * 0.8),
-			scale: () => gsap.utils.random(0.2, 0.7),
+		gsapInstance.from('.mosaic-tile', {
 			opacity: 0,
+			scale: 0.9,
+			duration: 0.45,
 			ease: 'power2.out',
-			stagger: { each: 0.01, from: 'random' },
-			scrollTrigger: { trigger: '[data-rasi]', start: 'top 80%', end: 'center 60%', scrub: 1 },
+			stagger: { each: 0.012, from: 'start' },
+			scrollTrigger: {
+				trigger: '[data-sheet]',
+				start: 'top 78%',
+			},
 		});
 
-		// Bento: muncul bergeser dari bawah
-		gsap.from('[data-tile]', {
-			y: 80,
+		gsapInstance.from('[data-card]', {
+			y: 34,
 			opacity: 0,
-			duration: 0.9,
+			duration: 0.75,
 			ease: 'power3.out',
 			stagger: 0.12,
-			scrollTrigger: { trigger: '.bento-grid', start: 'top 85%' },
+			scrollTrigger: { trigger: '.index-grid', start: 'top 86%' },
 		});
 	});
 </script>
 
 <style>
-	/* ---------- umum ---------- */
-	.label {
-		font-size: 0.78rem;
-		letter-spacing: 0.3em;
-		text-transform: uppercase;
-		color: var(--gold-500);
-		margin: 0 0 1rem;
-	}
-	.muted {
-		color: var(--ink-soft);
-	}
-	.btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.85rem 1.4rem;
-		border-radius: 999px;
-		font-weight: 500;
-		text-decoration: none;
-		transition:
-			transform 0.25s ease,
-			background-color 0.25s ease;
-	}
-	.btn:hover {
-		transform: translateY(-2px);
-	}
-	.btn-gold {
-		background: linear-gradient(135deg, var(--gold-300), var(--gold-500));
-		color: var(--navy-950);
-	}
-	.btn-ghost {
-		color: var(--ink);
-		border: 1px solid color-mix(in srgb, var(--gold-300) 40%, transparent);
-	}
-	.btn-ghost:hover {
-		background: color-mix(in srgb, var(--gold-300) 10%, transparent);
+	/* ========================================================
+     1. HERO
+     ======================================================== */
+	.hero {
+		background: var(--bg);
+		padding-top: clamp(3rem, 7vw, 5.5rem);
+		padding-bottom: clamp(4rem, 8vw, 6.5rem);
+		border-bottom: 1px solid var(--border);
 	}
 
-	/* ---------- 1. hero ---------- */
-	.hero {
-		position: relative;
-		min-height: calc(100svh - 60px);
+	.hero-layout {
 		display: grid;
+		grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+		gap: clamp(2.5rem, 5vw, 4.5rem);
 		align-items: center;
-		overflow: hidden;
-		isolation: isolate;
 	}
-	.hero-inner {
+
+	.hero-content {
 		position: relative;
 		z-index: 2;
-		padding-block: 4rem;
 	}
-	.eyebrow {
-		font-size: 0.78rem;
-		letter-spacing: 0.3em;
-		text-transform: uppercase;
-		color: var(--gold-500);
-		margin: 0 0 1rem;
-	}
+
 	.hero-title {
+		display: flex;
+		flex-direction: column;
+		gap: 0.85rem;
+		margin: 0 0 1.25rem;
+	}
+
+	.hero-brand-line {
 		display: flex;
 		align-items: baseline;
 		flex-wrap: wrap;
-		gap: 0 1.2rem;
-		margin: 0;
-		line-height: 0.85;
+		gap: 0 0.85rem;
+		line-height: 0.9;
 	}
-	.word-script {
+
+	.hero-script {
 		font-family: var(--font-script);
-		font-size: clamp(5.5rem, 19vw, 15rem);
-		background: linear-gradient(180deg, #fff3cc 10%, var(--gold-400) 60%, var(--gold-500));
-		-webkit-background-clip: text;
-		background-clip: text;
-		color: transparent;
-		/* ruang untuk ekor huruf script agar tidak terpotong oleh background-clip */
-		padding: 0.18em 0.25em 0.12em 0.12em;
-		margin: -0.18em -0.1em -0.12em -0.12em;
-		line-height: 1.05;
-		filter: drop-shadow(0 8px 40px rgb(228 191 92 / 0.25));
+		font-weight: 400;
+		font-size: clamp(3.9rem, 12vw, 8.8rem);
+		color: var(--navy);
+		line-height: 0.88;
+		padding-right: 0.25rem;
 	}
-	.word-num {
+
+	.hero-num {
 		font-family: var(--font-serif);
 		font-style: italic;
-		font-weight: 500;
-		font-size: clamp(3rem, 9vw, 7rem);
-		color: var(--ink);
+		font-weight: 600;
+		font-size: clamp(2.2rem, 5.5vw, 4.4rem);
+		color: var(--gold);
 	}
-	.hero-lead {
-		max-width: 32rem;
-		font-size: clamp(1.05rem, 1.6vw, 1.25rem);
-		color: var(--ink-soft);
-		margin: 1.5rem 0 2rem;
-	}
-	.hero-lead em {
+
+	.hero-sub {
 		font-family: var(--font-serif);
-		font-size: 1.25em;
-		color: var(--gold-300);
+		font-weight: 500;
+		font-size: clamp(1.5rem, 3vw, 2.25rem);
+		line-height: 1.18;
+		color: var(--navy);
+		max-width: 30rem;
 	}
+
+	.hero-lead {
+		max-width: 33rem;
+		font-size: clamp(1rem, 1.4vw, 1.12rem);
+		color: var(--ink-muted);
+		line-height: 1.7;
+		margin: 0 0 2rem;
+	}
+
 	.hero-cta {
 		display: flex;
-		gap: 0.75rem;
+		gap: 0.85rem;
 		flex-wrap: wrap;
+		margin-bottom: 2.75rem;
 	}
 
-	.float-layer {
-		position: absolute;
-		inset: 0;
-		z-index: 1;
-		pointer-events: none;
-	}
-	.float-card {
-		position: absolute;
+	.hero-metrics {
 		display: grid;
-		gap: 0.4rem;
-		padding: 1rem 1.1rem;
-		border-radius: var(--radius);
-		background: linear-gradient(160deg, rgb(255 255 255 / 0.1), rgb(255 255 255 / 0.03));
-		border: 1px solid rgb(243 217 139 / 0.25);
-		backdrop-filter: blur(8px);
-		box-shadow: 0 30px 60px -20px rgb(0 0 0 / 0.6);
-	}
-	.fc-kicker {
-		font-size: 0.7rem;
-		letter-spacing: 0.25em;
-		text-transform: uppercase;
-		color: var(--gold-400);
-	}
-	.fc-1 {
-		width: 15rem;
-		right: 8%;
-		top: 14%;
-		rotate: 6deg;
-	}
-	.fc-text {
-		font-family: var(--font-serif);
-		font-style: italic;
-		font-size: 1.25rem;
-		line-height: 1.25;
-	}
-	.fc-2 {
-		right: 26%;
-		bottom: 14%;
-		rotate: -8deg;
-	}
-	.fc-big {
-		font-family: var(--font-script);
-		font-size: 3rem;
-		color: var(--gold-300);
-		line-height: 1;
-	}
-	.fc-3 {
-		right: 4%;
-		bottom: 22%;
-		rotate: 10deg;
-	}
-	.fc-dots {
-		display: grid;
-		grid-template-columns: repeat(3, 1.6rem);
-		gap: 0.4rem;
-	}
-	.fc-dots i {
-		width: 1.6rem;
-		aspect-ratio: 1;
-		border-radius: 50%;
-		background: radial-gradient(circle at 35% 35%, var(--gold-300), var(--navy-600));
-	}
-	.moon-wrap {
-		position: absolute;
-		right: 14%;
-		top: 32%;
-		width: clamp(9rem, 18vw, 15rem);
-		opacity: 0.9;
-		z-index: -1;
-	}
-
-	.seal {
-		position: absolute;
-		z-index: 3;
-		left: min(58%, 40rem);
-		top: 10%;
-		width: 8.5rem;
-		aspect-ratio: 1;
-		display: grid;
-		place-items: center;
-		border-radius: 50%;
-		background: radial-gradient(circle, var(--gold-300), var(--gold-500));
-		color: var(--navy-950);
-		rotate: -12deg;
-		box-shadow: 0 20px 40px -10px rgb(0 0 0 / 0.6);
-	}
-	.seal-ring {
-		position: absolute;
-		inset: 0;
-		font-size: 13.5px;
-		letter-spacing: 0.18em;
-		font-weight: 600;
-		fill: var(--navy-900);
-	}
-	@media (prefers-reduced-motion: no-preference) {
-		.seal-ring {
-			animation: spin 22s linear infinite;
-		}
-	}
-	@keyframes spin {
-		to {
-			transform: rotate(360deg);
-		}
-	}
-	.seal-ring {
-		transform-origin: 50% 50%;
-	}
-	.seal-num {
-		display: grid;
-		text-align: center;
-		font-family: var(--font-serif);
-		font-style: italic;
-		font-weight: 600;
-		font-size: 2.6rem;
-		line-height: 0.9;
-	}
-	.seal-num small {
-		font-family: var(--font-body);
-		font-style: normal;
-		font-size: 0.65rem;
-		letter-spacing: 0.25em;
-		text-transform: uppercase;
-	}
-
-	@media (max-width: 820px) {
-		.float-layer {
-			opacity: 0.45;
-		}
-		.fc-1,
-		.fc-2,
-		.fc-3 {
-			display: none;
-		}
-		.moon-wrap {
-			right: -2rem;
-			top: 8%;
-		}
-		.seal {
-			left: auto;
-			right: 1rem;
-			top: auto;
-			bottom: 1.5rem;
-			width: 6.5rem;
-		}
-		.seal-ring {
-			font-size: 12px;
-		}
-		.seal-num {
-			font-size: 2rem;
-		}
-	}
-
-	/* ---------- 2. manifesto ---------- */
-	.manifesto {
-		padding-block: clamp(5rem, 14vw, 10rem);
-	}
-	.manifesto-text {
-		font-family: var(--font-serif);
-		font-style: italic;
-		font-weight: 500;
-		font-size: clamp(1.9rem, 4.6vw, 3.9rem);
-		line-height: 1.15;
-		margin: 0;
-		max-width: 60rem;
-	}
-
-	/* ---------- 3. motto ---------- */
-	.motto {
-		border-top: 1px solid rgb(243 217 139 / 0.2);
-	}
-	.motto-row {
-		display: grid;
-		grid-template-columns: 3rem minmax(0, 1fr) minmax(0, 22rem) 3rem;
-		align-items: center;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: 1.5rem;
-		padding-block: clamp(1.5rem, 4vw, 2.75rem);
-		border-bottom: 1px solid rgb(243 217 139 / 0.2);
-	}
-	.motto-no {
-		font-size: 0.85rem;
-		color: var(--gold-500);
-		letter-spacing: 0.15em;
-	}
-	.motto-word {
-		font-family: var(--font-serif);
-		font-style: italic;
-		font-weight: 500;
-		font-size: clamp(3.5rem, 12vw, 9rem);
-		line-height: 0.9;
 		margin: 0;
-		color: var(--ink);
-		transition: color 0.3s ease;
-	}
-	.motto-row:hover .motto-word {
-		color: var(--gold-300);
-	}
-	.motto-isi {
-		margin: 0;
-		color: var(--ink-soft);
-	}
-	.motto-link {
-		justify-self: end;
-		display: grid;
-		place-items: center;
-		width: 3rem;
-		aspect-ratio: 1;
-		border-radius: 50%;
-		border: 1px solid rgb(243 217 139 / 0.4);
-		text-decoration: none;
-		font-size: 1.2rem;
-		transition: transform 0.25s ease;
-	}
-	.motto-link:not(.is-soon):hover {
-		transform: rotate(-45deg);
-		background: var(--gold-400);
-		color: var(--navy-950);
-	}
-	.is-soon {
-		opacity: 0.4;
-	}
-	@media (max-width: 720px) {
-		.motto-row {
-			grid-template-columns: 2rem 1fr 3rem;
-		}
-		.motto-isi {
-			grid-column: 2 / -1;
-			grid-row: 2;
-		}
+		padding-top: 1.5rem;
+		border-top: 1px solid var(--border);
 	}
 
-	/* ---------- 4. rasi ---------- */
-	.rasi {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
-		gap: clamp(2rem, 6vw, 5rem);
-		align-items: center;
-		padding-block: clamp(5rem, 12vw, 9rem);
+	.metric-item {
+		display: flex;
+		flex-direction: column-reverse;
+		gap: 0.2rem;
 	}
-	.rasi-head h2 {
-		font-family: var(--font-serif);
-		font-style: italic;
-		font-weight: 500;
-		font-size: clamp(2.2rem, 5vw, 3.8rem);
-		color: var(--ink);
+
+	.metric-item dt {
+		font-size: 0.78rem;
+		color: var(--ink-faint);
+		line-height: 1.35;
 	}
-	.rasi-grid {
-		list-style: none;
+
+	.metric-item dd {
 		margin: 0;
-		padding: 0;
-		display: grid;
-		grid-template-columns: repeat(8, minmax(0, 1fr));
-		gap: clamp(0.35rem, 1.2vw, 0.8rem);
-	}
-	.star {
-		aspect-ratio: 1;
-		border-radius: 50%;
-		display: grid;
-		place-items: center;
-		font-size: clamp(0.55rem, 1.2vw, 0.85rem);
+		font-family: var(--font-serif);
 		font-weight: 600;
-		color: var(--navy-950);
-		background: radial-gradient(circle at 35% 30%, #fff3cc, var(--gold-400) 55%, var(--gold-500));
-		box-shadow: 0 0 18px rgb(228 191 92 / 0.45);
-	}
-	.star.is-empty {
-		background: radial-gradient(circle, rgb(243 217 139 / 0.35) 0 12%, transparent 14%),
-			rgb(255 255 255 / 0.03);
-		border: 1px solid rgb(243 217 139 / 0.18);
-		box-shadow: none;
-	}
-	.rasi-cta {
-		grid-column: 1;
-		justify-self: start;
-	}
-	@media (max-width: 820px) {
-		.rasi {
-			grid-template-columns: 1fr;
-		}
+		font-size: clamp(1.5rem, 2.6vw, 2rem);
+		line-height: 1.05;
+		color: var(--navy);
 	}
 
-	/* ---------- 5. bento ---------- */
-	.bento {
-		padding-bottom: 2rem;
-	}
-	.bento h2 {
-		font-family: var(--font-serif);
-		font-style: italic;
-		font-weight: 500;
-		color: var(--ink);
-	}
-	.bento-grid {
-		display: grid;
-		grid-template-columns: 1.3fr 1fr;
-		grid-template-rows: repeat(2, minmax(13rem, auto));
-		gap: 1rem;
-	}
-	.tile {
+	/* Meja Polaroid Interaktif */
+	.hero-desk {
 		position: relative;
 		display: flex;
 		flex-direction: column;
-		justify-content: flex-end;
-		gap: 0.35rem;
-		padding: 1.6rem;
-		border-radius: calc(var(--radius) * 1.5);
+		align-items: center;
+		gap: 1.5rem;
+		padding-block: 1rem 0.5rem;
+	}
+
+	.polaroid-deck {
+		position: relative;
+		width: min(21rem, 100%);
+		height: 22.5rem;
+	}
+
+	.deck-card {
+		position: absolute;
+		top: 0.75rem;
+		left: 0;
+		width: min(19.5rem, 90%);
+		cursor: grab;
+		user-select: none;
+		touch-action: none;
+	}
+
+	.deck-card:active {
+		cursor: grabbing;
+	}
+
+	.deck-controls {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		flex-wrap: wrap;
+		justify-content: center;
+		position: relative;
+		z-index: 6;
+	}
+
+	.deck-counter {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		color: var(--ink-faint);
+		padding-right: 0.35rem;
+	}
+
+	/* Segel Aethra */
+	.aethra-seal {
+		position: absolute;
+		bottom: 3rem;
+		left: -0.25rem;
+		z-index: 8;
+		width: 8rem;
+		height: 8rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: rgba(255, 255, 255, 0.94);
+		border-radius: 50%;
+		box-shadow: 0 12px 28px -10px rgba(11, 22, 40, 0.14);
+		transform: rotate(-12deg);
+		pointer-events: none;
+	}
+
+	.seal-svg {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+	}
+
+	.seal-ring-outer {
+		fill: none;
+		stroke: var(--border-strong);
+		stroke-width: 1.2;
+		stroke-dasharray: 3 3;
+	}
+
+	.seal-ring-inner {
+		fill: none;
+		stroke: rgba(158, 115, 31, 0.35);
+		stroke-width: 1;
+	}
+
+	.seal-text {
+		font-family: var(--font-mono);
+		font-size: 10.2px;
+		letter-spacing: 0.14em;
+		font-weight: 600;
+		fill: var(--navy-soft);
+	}
+
+	.seal-center {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		line-height: 1;
+	}
+
+	.seal-top,
+	.seal-bottom {
+		font-family: var(--font-mono);
+		font-size: 0.5rem;
+		letter-spacing: 0.18em;
+		font-weight: 600;
+		color: var(--gold);
+	}
+
+	.seal-big {
+		font-family: var(--font-serif);
+		font-size: 2rem;
+		font-weight: 700;
+		font-style: italic;
+		color: var(--navy);
+		margin-block: 0.1rem;
+	}
+
+	/* ========================================================
+     2. PITA TEKS BERJALAN
+     ======================================================== */
+	.marquee-band {
+		background: var(--bg);
+		border-bottom: 1px solid var(--border);
+		overflow: hidden;
+		padding-block: 0.9rem;
+	}
+
+	.marquee-track {
+		display: flex;
+		width: max-content;
+		animation: aethra-marquee 32s linear infinite;
+	}
+
+	.marquee-band:hover .marquee-track {
+		animation-play-state: paused;
+	}
+
+	.marquee-list {
+		display: flex;
+		align-items: center;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.marquee-item {
+		display: inline-flex;
+		align-items: center;
+		gap: 1.5rem;
+		padding-right: 1.5rem;
+		font-family: var(--font-body);
+		font-size: 0.72rem;
+		font-weight: 500;
+		letter-spacing: 0.22em;
+		text-transform: uppercase;
+		color: var(--ink-faint);
+		white-space: nowrap;
+		transition: color 0.2s ease;
+	}
+
+	.marquee-item:hover {
+		color: var(--navy);
+	}
+
+	.marquee-star {
+		color: var(--gold);
+		font-size: 0.75rem;
+	}
+
+	@keyframes aethra-marquee {
+		from {
+			transform: translateX(0);
+		}
+		to {
+			transform: translateX(-50%);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.marquee-track {
+			animation: none;
+		}
+	}
+
+	/* ========================================================
+     3. MANIFESTO / PROLOG
+     ======================================================== */
+	.manifesto-section {
+		background: var(--bg);
+		padding-block: clamp(4.5rem, 10vw, 7.5rem);
+	}
+
+	.manifesto-layout {
+		display: grid;
+		grid-template-columns: 240px minmax(0, 1fr);
+		gap: 2rem 3.5rem;
+		align-items: start;
+	}
+
+	.rail-note {
+		font-size: 0.9rem;
+		color: var(--ink-faint);
+		line-height: 1.6;
+		margin: 0 0 1.25rem;
+	}
+
+	.rail-meter {
+		width: 8rem;
+		height: 2px;
+		background: var(--border);
+		border-radius: 99px;
+		overflow: hidden;
+	}
+
+	.rail-meter-bar {
+		display: block;
+		width: 100%;
+		height: 100%;
+		background: var(--navy);
+		transform-origin: 0 50%;
+		transform: scaleX(1);
+	}
+
+	.manifesto-quote {
+		margin: 0;
+		padding: 0;
+	}
+
+	.manifesto-body {
+		font-family: var(--font-serif);
+		font-weight: 500;
+		font-size: clamp(1.85rem, 3.6vw, 2.85rem);
+		line-height: 1.32;
+		letter-spacing: -0.015em;
+		margin: 0;
+		color: var(--navy);
+	}
+
+	.mw {
+		display: inline;
+	}
+
+	.manifesto-footer {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.75rem 1.5rem;
+		margin-top: 2.5rem;
+		padding-top: 1.5rem;
+		border-top: 1px solid var(--border);
+		font-size: 0.85rem;
+		color: var(--ink-faint);
+	}
+
+	.sign-line {
+		font-family: var(--font-serif);
+		font-style: italic;
+		font-size: 1.2rem;
+		font-weight: 500;
+		color: var(--navy);
+	}
+
+	/* ========================================================
+     4. TIGA PILAR INTERAKTIF
+     ======================================================== */
+	.motto-section {
+		background: var(--bg);
+		padding-block: clamp(4.5rem, 9vw, 7rem);
+		border-top: 1px solid var(--border);
+	}
+
+	.section-head {
+		margin-bottom: 3rem;
+	}
+
+	.section-title {
+		font-size: clamp(2.1rem, 4.5vw, 3.25rem);
+		margin-bottom: 0.6rem;
+	}
+
+	.section-desc {
+		font-size: 1.02rem;
+		color: var(--ink-muted);
+		max-width: 36rem;
+		margin: 0;
+	}
+
+	.pilar-grid {
+		display: grid;
+		grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+		gap: 2.5rem;
+		align-items: start;
+	}
+
+	.pilar-list {
+		border-top: 1.5px solid var(--navy);
+	}
+
+	.pilar-btn {
+		width: 100%;
+		text-align: left;
+		background: transparent;
+		border: none;
+		border-bottom: 1px solid var(--border);
+		padding: 1.5rem 1rem;
+		display: grid;
+		grid-template-columns: 6.5rem minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 1.25rem;
+		cursor: pointer;
+		font-family: inherit;
+		transition: background-color 0.2s ease;
+	}
+
+	.pilar-btn:hover,
+	.pilar-btn.is-active {
+		background: var(--surface);
+	}
+
+	.pilar-btn-meta {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+	}
+
+	.pilar-bab {
+		font-size: 0.62rem;
+		font-weight: 600;
+		letter-spacing: 0.14em;
+		color: var(--gold);
+	}
+
+	.pilar-no {
+		font-family: var(--font-serif);
+		font-size: 1.65rem;
+		font-weight: 600;
+		color: var(--navy);
+		line-height: 1;
+	}
+
+	.pilar-btn-body {
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+	}
+
+	.pilar-word {
+		font-family: var(--font-serif);
+		font-weight: 600;
+		font-size: clamp(2rem, 4vw, 3rem);
+		line-height: 1;
+		color: var(--navy);
+		transition: color 0.2s ease;
+	}
+
+	.pilar-btn.is-active .pilar-word {
+		color: var(--gold);
+	}
+
+	.pilar-summary {
+		font-size: 0.92rem;
+		color: var(--ink-muted);
+		line-height: 1.5;
+	}
+
+	.pilar-arrow {
+		font-size: 1.1rem;
+		color: var(--ink-faint);
+		transition:
+			transform 0.2s ease,
+			color 0.2s ease;
+	}
+
+	.pilar-btn.is-active .pilar-arrow,
+	.pilar-btn:hover .pilar-arrow {
+		transform: translateX(4px);
+		color: var(--navy);
+	}
+
+	.pilar-stage {
+		background: #ffffff;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-lg);
+		padding: clamp(1.5rem, 3.5vw, 2.25rem);
+		box-shadow: 0 22px 48px -22px rgba(11, 22, 40, 0.09);
+		position: sticky;
+		top: 5.5rem;
+	}
+
+	.panel-top {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 0.75rem;
+		padding-bottom: 1rem;
+		margin-bottom: 1.25rem;
+		border-bottom: 1px solid var(--border);
+	}
+
+	.panel-badge {
+		font-size: 0.7rem;
+		font-weight: 600;
+		letter-spacing: 0.14em;
+		color: var(--gold);
+	}
+
+	.panel-stat {
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
+		color: var(--ink-faint);
+	}
+
+	.panel-visual {
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		padding: 0.75rem;
+		margin-bottom: 1.35rem;
+	}
+
+	.panel-visual svg {
+		display: block;
+		width: 100%;
+		height: 7rem;
+	}
+
+	.panel-quote-box {
+		background: var(--surface);
+		border-left: 3px solid var(--gold);
+		border-radius: 0 var(--radius) var(--radius) 0;
+		padding: 1.15rem 1.25rem;
+		margin-bottom: 1.35rem;
+	}
+
+	.panel-quote {
+		font-family: var(--font-serif);
+		font-style: italic;
+		font-size: 1.25rem;
+		line-height: 1.4;
+		color: var(--navy);
+		margin: 0 0 0.5rem;
+	}
+
+	.panel-quote-author {
+		font-size: 0.78rem;
+		font-weight: 600;
+		color: var(--ink-faint);
+	}
+
+	.panel-crest-box {
+		background: var(--navy);
+		color: #ffffff;
+		border-radius: var(--radius);
+		padding: 1.4rem 1.25rem;
+		margin-bottom: 1.35rem;
+		text-align: center;
+	}
+
+	.crest-star {
+		display: inline-block;
+		color: var(--gold-bright);
+		font-size: 1.15rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.crest-line {
+		font-family: var(--font-serif);
+		font-style: italic;
+		font-size: 1.2rem;
+		line-height: 1.38;
+		margin: 0;
+		color: rgba(255, 255, 255, 0.92);
+	}
+
+	.panel-title {
+		font-size: 1.65rem;
+		margin: 0 0 0.5rem;
+	}
+
+	.panel-desc {
+		font-size: 0.94rem;
+		color: var(--ink-muted);
+		line-height: 1.6;
+		margin: 0 0 1.4rem;
+	}
+
+	.btn-sm {
+		padding: 0.62rem 1.15rem;
+		font-size: 0.85rem;
+	}
+
+	/* ========================================================
+     5. MOSAIK 64 REKAN
+     ======================================================== */
+	.mosaic-section {
+		background: var(--bg);
+		padding-block: clamp(4.5rem, 9vw, 7rem);
+		border-top: 1px solid var(--border);
+	}
+
+	.mosaic-head {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-end;
+		gap: 2rem;
+		margin-bottom: 2.5rem;
+		flex-wrap: wrap;
+	}
+
+	.mosaic-status {
+		display: inline-flex;
+		align-items: baseline;
+		gap: 0.65rem;
+		padding: 0.55rem 1.1rem;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-pill);
+		background: var(--surface);
+	}
+
+	.status-count {
+		font-family: var(--font-serif);
+		font-weight: 600;
+		font-size: 1.35rem;
+		color: var(--navy);
+		line-height: 1;
+	}
+
+	.status-label {
+		font-size: 0.72rem;
+		font-weight: 600;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--gold);
+	}
+
+	.mosaic-frame {
+		background: #ffffff;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-lg);
+		padding: clamp(1rem, 3vw, 2rem);
+		box-shadow: 0 20px 50px -24px rgba(11, 22, 40, 0.08);
+	}
+
+	.mosaic-toolbar {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 1rem;
+		flex-wrap: wrap;
+		margin-bottom: 1rem;
+	}
+
+	.mosaic-filters {
+		display: flex;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+	}
+
+	.mosaic-search-wrap {
+		flex: 1 1 14rem;
+		max-width: 18rem;
+	}
+
+	.mosaic-spotlight {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 1rem;
+		flex-wrap: wrap;
+		padding: 0.9rem 1.15rem;
+		margin-bottom: 1.5rem;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+	}
+
+	.spotlight-info {
+		display: flex;
+		align-items: center;
+		gap: 0.9rem;
+	}
+
+	.spotlight-no {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.3rem 0.65rem;
+		border-radius: var(--radius-pill);
+		background: var(--navy);
+		color: #ffffff;
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		font-weight: 600;
+		flex-shrink: 0;
+	}
+
+	.spotlight-copy {
+		display: flex;
+		flex-direction: column;
+		line-height: 1.3;
+	}
+
+	.spotlight-name {
+		font-size: 0.96rem;
+		font-weight: 600;
+		color: var(--navy);
+	}
+
+	.spotlight-meta {
+		font-size: 0.8rem;
+		color: var(--ink-faint);
+	}
+
+	.spotlight-actions {
+		display: flex;
+		align-items: center;
+		gap: 0.85rem;
+		flex-wrap: wrap;
+	}
+
+	.spotlight-link {
+		font-size: 0.84rem;
+		font-weight: 600;
+		text-decoration: none;
+		color: var(--navy);
+	}
+
+	.spotlight-link:hover {
+		color: var(--gold);
+	}
+
+	.mosaic-grid {
+		display: grid;
+		grid-template-columns: repeat(8, minmax(0, 1fr));
+		gap: 0.55rem;
+	}
+
+	.mosaic-tile {
+		position: relative;
+		width: 100%;
+		aspect-ratio: 1;
+		border-radius: var(--radius);
+		border: 1px solid var(--border);
+		background: var(--surface);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.25rem;
+		cursor: pointer;
+		font-family: inherit;
+		transition:
+			transform 0.2s ease,
+			border-color 0.2s ease,
+			box-shadow 0.2s ease,
+			opacity 0.2s ease;
+	}
+
+	.mosaic-tile:hover {
+		transform: translateY(-2px);
+		border-color: var(--navy-soft);
+		box-shadow: 0 8px 18px -8px rgba(11, 22, 40, 0.16);
+	}
+
+	.mosaic-tile.is-active {
+		border-color: var(--gold);
+		box-shadow: 0 0 0 2px rgba(158, 115, 31, 0.25);
+	}
+
+	.mosaic-tile.is-filled {
+		background: var(--navy);
+		border-color: var(--navy);
+		color: #ffffff;
+	}
+
+	.mosaic-tile.is-dimmed {
+		opacity: 0.22;
+	}
+
+	.mosaic-tile.is-match {
+		border-color: var(--gold-bright);
+		box-shadow: 0 0 0 2px rgba(207, 161, 68, 0.45);
+	}
+
+	.tile-no {
+		position: absolute;
+		top: 0.28rem;
+		left: 0.35rem;
+		font-family: var(--font-mono);
+		font-size: 0.56rem;
+		color: var(--ink-faint);
+		line-height: 1;
+	}
+
+	.mosaic-tile.is-filled .tile-no {
+		color: rgba(255, 255, 255, 0.55);
+	}
+
+	.tile-initials {
+		font-family: var(--font-serif);
+		font-weight: 600;
+		font-size: clamp(0.95rem, 2vw, 1.4rem);
+		color: #ffffff;
+		line-height: 1;
+	}
+
+	.tile-dot {
+		position: absolute;
+		bottom: 0.35rem;
+		right: 0.35rem;
+		width: 0.35rem;
+		height: 0.35rem;
+		border-radius: 50%;
+		background: var(--gold-bright);
+	}
+
+	.tile-star {
+		font-size: 0.72rem;
+		color: var(--border-strong);
+		line-height: 1;
+	}
+
+	.mosaic-footer {
+		margin-top: 1.75rem;
+		padding-top: 1.25rem;
+		border-top: 1px solid var(--border);
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 1rem;
+	}
+
+	.mosaic-hint {
+		font-size: 0.86rem;
+		color: var(--ink-muted);
+		margin: 0;
+		max-width: 34rem;
+	}
+
+	/* ========================================================
+     6. INDEKS BUKU TAHUNAN
+     ======================================================== */
+	.index-section {
+		background: var(--bg);
+		padding-block: clamp(4.5rem, 9vw, 7rem);
+		border-top: 1px solid var(--border);
+	}
+
+	.index-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+		gap: 1.5rem;
+	}
+
+	.index-card {
+		position: relative;
+		background: #ffffff;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-lg);
+		padding: 1.5rem 1.75rem 1.75rem;
+		display: flex;
+		flex-direction: column;
 		text-decoration: none;
 		color: var(--ink);
 		overflow: hidden;
-		border: 1px solid rgb(243 217 139 / 0.18);
 		transition:
-			transform 0.35s ease,
-			border-color 0.35s ease;
+			border-color 0.25s ease,
+			box-shadow 0.25s ease;
 	}
-	.tile:hover {
-		transform: translateY(-4px);
-		border-color: rgb(243 217 139 / 0.55);
-	}
-	.tile-rasi {
-		grid-row: span 2;
-		background:
-			radial-gradient(circle at 75% 25%, rgb(228 191 92 / 0.35), transparent 45%),
-			linear-gradient(160deg, var(--navy-600), var(--navy-900));
-	}
-	.tile-rasa {
-		background: linear-gradient(150deg, #1d2f63, #0d1838);
-	}
-	.tile-cipta {
-		background: linear-gradient(150deg, #2a2a52, #10173a);
-	}
-	.tile-no {
+
+	.index-card::before {
+		content: '';
 		position: absolute;
-		top: 1.2rem;
-		right: 1.4rem;
-		color: var(--gold-500);
-		font-size: 0.85rem;
-		letter-spacing: 0.15em;
+		inset: 0;
+		background: radial-gradient(
+			360px circle at var(--mx, 50%) var(--my, 50%),
+			rgba(11, 22, 40, 0.04),
+			transparent 70%
+		);
+		opacity: 0;
+		transition: opacity 0.25s ease;
+		pointer-events: none;
 	}
-	.tile-title {
+
+	.index-card:hover {
+		border-color: var(--navy);
+		box-shadow: 0 22px 44px -18px rgba(11, 22, 40, 0.12);
+	}
+
+	.index-card:hover::before {
+		opacity: 1;
+	}
+
+	.card-illus {
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		padding: 0.65rem;
+		margin-bottom: 1.25rem;
+	}
+
+	.card-illus svg {
+		display: block;
+		width: 100%;
+		height: 4.75rem;
+	}
+
+	.card-head {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding-bottom: 0.85rem;
+		margin-bottom: 1rem;
+		border-bottom: 1px solid var(--border);
+		font-size: 0.72rem;
+	}
+
+	.card-vol {
+		font-weight: 600;
+		color: var(--gold);
+		letter-spacing: 0.14em;
+	}
+
+	.card-page {
+		color: var(--ink-faint);
+	}
+
+	.card-body {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.card-title {
 		font-family: var(--font-serif);
-		font-style: italic;
-		font-weight: 500;
-		font-size: clamp(2.2rem, 4.5vw, 3.5rem);
-		line-height: 1;
-		color: var(--gold-300);
+		font-weight: 600;
+		font-size: 2.15rem;
+		line-height: 1.1;
+		color: var(--navy);
+		margin: 0 0 0.25rem;
 	}
-	.tile-rasi .tile-title {
-		font-size: clamp(2.8rem, 6vw, 5rem);
+
+	.card-sub {
+		font-size: 0.92rem;
+		font-weight: 600;
+		color: var(--gold);
+		margin: 0 0 0.75rem;
 	}
-	.tile-sub {
-		color: var(--ink-soft);
+
+	.card-desc {
+		font-size: 0.92rem;
+		color: var(--ink-muted);
+		line-height: 1.6;
+		margin: 0 0 1.5rem;
 	}
-	@media (max-width: 720px) {
-		.bento-grid {
+
+	.card-foot {
+		padding-top: 0.9rem;
+		border-top: 1px solid var(--border);
+	}
+
+	.card-link-text {
+		font-size: 0.85rem;
+		font-weight: 600;
+		color: var(--navy);
+		display: inline-block;
+		transition:
+			transform 0.2s ease,
+			color 0.2s ease;
+	}
+
+	.index-card:hover .card-link-text {
+		color: var(--gold);
+		transform: translateX(4px);
+	}
+
+	/* ========================================================
+     RESPONSIF
+     ======================================================== */
+	@media (max-width: 920px) {
+		.hero-layout {
 			grid-template-columns: 1fr;
-			grid-template-rows: none;
 		}
-		.tile {
-			min-height: 11rem;
+		.pilar-grid {
+			grid-template-columns: 1fr;
 		}
-		.tile-rasi {
-			grid-row: auto;
-			min-height: 16rem;
+		.pilar-stage {
+			position: static;
+		}
+	}
+
+	@media (max-width: 820px) {
+		.manifesto-layout {
+			grid-template-columns: 1fr;
+			gap: 1.25rem;
+		}
+	}
+
+	@media (max-width: 600px) {
+		.hero-metrics {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 0.75rem;
+		}
+		.polaroid-deck {
+			max-width: 19rem;
+			height: 19rem;
+		}
+		.deck-card {
+			width: 15.5rem;
+		}
+		.aethra-seal {
+			width: 6.2rem;
+			height: 6.2rem;
+			bottom: 2.8rem;
+			left: 0;
+		}
+		.seal-big {
+			font-size: 1.5rem;
+		}
+		.pilar-btn {
+			grid-template-columns: 1fr auto;
+			gap: 0.65rem;
+		}
+		.pilar-btn-meta {
+			grid-column: 1 / -1;
+			flex-direction: row;
+			align-items: baseline;
+			gap: 0.6rem;
+		}
+		.mosaic-search-wrap {
+			max-width: 100%;
+			flex-basis: 100%;
+		}
+		.mosaic-grid {
+			gap: 0.28rem;
+		}
+		.mosaic-tile {
+			border-radius: 4px;
+			padding: 0.1rem;
+		}
+		.mosaic-tile:not(.is-filled) .tile-no {
+			display: none;
+		}
+		.mosaic-tile.is-filled .tile-no {
+			font-size: 0.45rem;
+			top: 0.15rem;
+			left: 0.2rem;
+		}
+		.tile-dot {
+			width: 0.22rem;
+			height: 0.22rem;
+			bottom: 0.2rem;
+			right: 0.2rem;
 		}
 	}
 </style>

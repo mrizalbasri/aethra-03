@@ -1,0 +1,236 @@
+<dialog class="aethra-dialog" data-member-dialog aria-labelledby="md-nama">
+	<div class="dialog-panel">
+		<div class="md-head">
+			<div class="md-badges">
+				<span class="md-badge" data-md-no>#01</span>
+				<span class="md-status" data-md-status>Profil Terisi</span>
+			</div>
+			<button type="button" class="md-close" data-md-close aria-label="Tutup kartu profil">
+				✕
+			</button>
+		</div>
+
+		<div class="md-profile">
+			<div class="md-avatar" data-md-avatar>
+				<img class="md-img" data-md-img hidden alt="" />
+				<span class="md-initials" data-md-initials>A3</span>
+			</div>
+			<div class="md-identity">
+				<h3 id="md-nama" class="md-name" data-md-nama>Nama Peserta</h3>
+				<p class="md-meta" data-md-meta>Masadagri Batch III</p>
+			</div>
+		</div>
+
+		<div class="md-body">
+			<div class="md-block" data-md-kalimat-wrap hidden>
+				<span class="md-label">Satu Hal tentang Dirinya</span>
+				<p class="md-kalimat" data-md-kalimat></p>
+			</div>
+
+			<div class="md-block" data-md-pesan-wrap hidden>
+				<span class="md-label">Pesan buat Aethra 03</span>
+				<p class="md-pesan" data-md-pesan></p>
+			</div>
+
+			<div class="md-empty" data-md-empty-wrap hidden>
+				<p>
+					Kursi nomor ini disiapkan untuk teman Aethra 03 yang profil dan pesannya segera
+					menyusul.
+				</p>
+			</div>
+		</div>
+
+		<div class="md-foot">
+			<button type="button" class="chip" data-md-prev>← Sebelumnya</button>
+			<span class="md-counter" data-md-counter>01 / 64</span>
+			<button type="button" class="chip" data-md-next>Berikutnya →</button>
+		</div>
+	</div>
+</dialog>
+
+<style>
+	.md-head {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 1rem;
+		padding-bottom: 1rem;
+		border-bottom: 1px solid var(--border);
+		margin-bottom: 1.5rem;
+	}
+
+	.md-badges {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		flex-wrap: wrap;
+	}
+
+	.md-badge {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.25rem 0.65rem;
+		border-radius: var(--radius-pill);
+		background: var(--navy);
+		color: #ffffff;
+		font-family: var(--font-mono);
+		font-size: 0.74rem;
+		font-weight: 600;
+	}
+
+	.md-status {
+		font-size: 0.72rem;
+		font-weight: 600;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--gold);
+	}
+
+	.md-close {
+		width: 2rem;
+		height: 2rem;
+		border-radius: 50%;
+		border: 1px solid var(--border);
+		background: var(--surface);
+		color: var(--navy);
+		font-size: 0.85rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		transition:
+			background-color 0.2s ease,
+			border-color 0.2s ease;
+	}
+
+	.md-close:hover {
+		background: var(--navy);
+		border-color: var(--navy);
+		color: #ffffff;
+	}
+
+	.md-profile {
+		display: flex;
+		align-items: center;
+		gap: 1.25rem;
+		margin-bottom: 1.5rem;
+	}
+
+	.md-avatar {
+		width: 4.75rem;
+		height: 4.75rem;
+		border-radius: 14px;
+		background: var(--navy);
+		border: 1px solid var(--navy);
+		color: #ffffff;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		overflow: hidden;
+		position: relative;
+	}
+
+	.md-avatar.is-open-slot {
+		background: var(--surface);
+		border-color: var(--border);
+		color: var(--gold);
+	}
+
+	.md-img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		display: block;
+	}
+
+	.md-initials {
+		font-family: var(--font-serif);
+		font-size: 1.75rem;
+		font-weight: 600;
+		line-height: 1;
+	}
+
+	.md-identity {
+		min-width: 0;
+	}
+
+	.md-name {
+		font-size: clamp(1.5rem, 3.5vw, 2rem);
+		margin: 0 0 0.25rem;
+		color: var(--navy);
+	}
+
+	.md-meta {
+		font-size: 0.88rem;
+		color: var(--ink-faint);
+		margin: 0;
+	}
+
+	.md-body {
+		display: grid;
+		gap: 1rem;
+		margin-bottom: 1.75rem;
+	}
+
+	.md-block {
+		padding: 1rem 1.15rem;
+		border-radius: var(--radius);
+		background: var(--surface);
+		border: 1px solid var(--border);
+	}
+
+	.md-label {
+		display: block;
+		font-size: 0.68rem;
+		font-weight: 600;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--gold);
+		margin-bottom: 0.35rem;
+	}
+
+	.md-kalimat {
+		font-family: var(--font-serif);
+		font-style: italic;
+		font-size: 1.25rem;
+		line-height: 1.35;
+		color: var(--navy);
+		margin: 0;
+	}
+
+	.md-pesan {
+		font-size: 0.94rem;
+		line-height: 1.6;
+		color: var(--ink-muted);
+		margin: 0;
+	}
+
+	.md-empty {
+		padding: 1.15rem;
+		border-radius: var(--radius);
+		background: var(--surface);
+		border: 1px dashed var(--border-strong);
+		color: var(--ink-muted);
+		font-size: 0.9rem;
+	}
+
+	.md-empty p {
+		margin: 0;
+	}
+
+	.md-foot {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 0.75rem;
+		padding-top: 1.15rem;
+		border-top: 1px solid var(--border);
+	}
+
+	.md-counter {
+		font-family: var(--font-mono);
+		font-size: 0.76rem;
+		color: var(--ink-faint);
+	}
+</style>
