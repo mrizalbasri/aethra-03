@@ -28,11 +28,14 @@ interface LightboxSlide {
 }
 
 const lightboxSlides: LightboxSlide[] = [];
+const polaroidVariants = ['editorial', 'warm', 'crest'] as const;
+const polaroidTilts = [-2, 1.5, -1] as const;
 
 const entries = await Promise.all(
-	kegiatan.map(async (k) => {
+	kegiatan.map(async (k, idx) => {
 		const tahun = String(k.data.tanggal.getFullYear());
 		const tanggalStr = formatTanggal.format(k.data.tanggal);
+		const agendaNo = String(idx + 1).padStart(2, '0');
 
 		const resolvedPhotos = (
 			await Promise.all(
@@ -64,12 +67,13 @@ const entries = await Promise.all(
 			lightboxSlides.push({
 				judul: k.data.judul,
 				tanggal: tanggalStr,
-				keterangan: k.data.deskripsi ?? 'Dokumentasi foto sedang dihimpun oleh tim kurator.',
+				keterangan: k.data.deskripsi ?? 'Foto kegiatan segera menyusul ke album angkatan.',
 			});
 		}
 
 		return {
 			id: k.id,
+			agendaNo,
 			judul: k.data.judul,
 			tahun,
 			tanggalStr,
@@ -77,6 +81,8 @@ const entries = await Promise.all(
 			photos: resolvedPhotos,
 			videos: k.data.video,
 			previewSlideIndex,
+			variant: polaroidVariants[idx % polaroidVariants.length]!,
+			tilt: polaroidTilts[idx % polaroidTilts.length]!,
 			hasPhoto: resolvedPhotos.length > 0,
 			hasVideo: k.data.video.length > 0,
 		};
@@ -89,34 +95,45 @@ const serializedSlides = JSON.stringify(lightboxSlides).replace(/</g, '\\u003c')
 
 <BaseLayout
 	title="Galeri Cipta"
-	description="Galeri foto, dokumentasi kegiatan, dan arsip karya bersama angkatan Aethra 03 Masadagri."
+	description="Galeri foto, dokumentasi kegiatan, dan arsip momen bersama angkatan Aethra 03 Masadagri."
 >
 	<section class="page-head container">
-		<div class="head-copy">
-			<p class="eyebrow">03 — Galeri Cipta</p>
-			<h1>Dokumentasi Kegiatan & <em>Karya Bersama</em></h1>
-			<p class="head-desc">
-				Rekam visual perjalanan angkatan Aethra 03: mulai dari kegiatan resmi, kolaborasi antar
-				divisi, hingga momen santai setelah jam dinas.
-			</p>
-		</div>
-		<div class="head-stats">
-			<div class="stat-pill">
-				<strong>{entries.length}</strong>
-				<span>Agenda Tercatat</span>
+		<div class="head-grid">
+			<div class="head-copy">
+				<p class="eyebrow">03 — Galeri Cipta</p>
+				<h1>Momen yang Sempat <em>Kita Abadikan</em></h1>
+				<p class="head-desc">
+					Kumpulan dokumentasi kegiatan dari awal perkenalan, keseharian di unit kerja, sampai
+					kumpul santai bareng teman seangkatan.
+				</p>
 			</div>
+
+			<aside class="view-card" aria-label="Pengaturan tampilan album">
+				<div class="vc-top">
+					<span class="vc-label">Mode Tampilan Album</span>
+					<span class="vc-count">{entries.length} Agenda Tersimpan</span>
+				</div>
+				<div class="vc-buttons">
+					<button type="button" class="chip is-active" data-cipta-view="timeline">
+						Tampilan Linimasa
+					</button>
+					<button type="button" class="chip" data-cipta-view="polaroid">
+						Meja Polaroid
+					</button>
+				</div>
+			</aside>
 		</div>
 	</section>
 
 	<section class="controls-wrap container" aria-label="Filter dan pencarian kegiatan">
 		<div class="controls-bar">
 			<div class="search-wrap">
-				<label class="sr-only" for="cipta-search">Cari judul atau deskripsi kegiatan</label>
+				<label class="sr-only" for="cipta-search">Cari nama agenda atau cerita kegiatan</label>
 				<input
 					id="cipta-search"
 					type="search"
 					class="search-field"
-					placeholder="Cari nama atau cerita kegiatan..."
+					placeholder="Cari nama agenda atau cerita kegiatan..."
 					data-cipta-search
 				/>
 			</div>
@@ -138,7 +155,7 @@ const serializedSlides = JSON.stringify(lightboxSlides).replace(/</g, '\\u003c')
 	</section>
 
 	<section class="timeline container">
-		<div class="timeline-list">
+		<div class="timeline-list" data-cipta-list>
 			{
 				entries.map((entry) => (
 					<article
@@ -150,8 +167,8 @@ const serializedSlides = JSON.stringify(lightboxSlides).replace(/</g, '\\u003c')
 						data-search={`${entry.judul} ${entry.deskripsi} ${entry.tanggalStr}`.toLowerCase()}
 					>
 						<div class="agenda-date">
+							<span class="date-badge">AGENDA {entry.agendaNo}</span>
 							<span class="date-label">{entry.tanggalStr}</span>
-							<span class="date-year">{entry.tahun}</span>
 						</div>
 
 						<div class="agenda-card">
@@ -205,11 +222,11 @@ const serializedSlides = JSON.stringify(lightboxSlides).replace(/</g, '\\u003c')
 										aria-label={`Buka pratinjau kegiatan ${entry.judul}`}
 									>
 										<Polaroid
-											variant="editorial"
+											variant={entry.variant}
 											caption={entry.judul}
 											subcaption={`${entry.tanggalStr} · Foto menyusul`}
-											tag={entry.tahun}
-											rotation={-1.5}
+											tag={`AGENDA ${entry.agendaNo}`}
+											rotation={entry.tilt}
 											showTape={false}
 										/>
 									</button>
@@ -222,15 +239,14 @@ const serializedSlides = JSON.stringify(lightboxSlides).replace(/</g, '\\u003c')
 		</div>
 
 		<div class="empty-state" data-cipta-empty hidden>
-			<p>Tidak ada agenda kegiatan yang cocok dengan filter ini.</p>
+			<p>Belum ada agenda kegiatan yang cocok dengan filter ini.</p>
 			<button type="button" class="btn btn-secondary" data-cipta-reset>Reset Filter</button>
 		</div>
 
 		<aside class="curator-note">
 			<p>
-				Dokumentasi kegiatan disimpan di <code>src/content/kegiatan/</code> beserta foto pada
-				<code>src/assets/kegiatan/&lt;id&gt;/</code>. Tautan video eksternal selalu dibuka di tab
-				baru.
+				Masih menyimpan foto kegiatan atau rekaman momen bareng di galeri HP? Bagikan ke tim
+				dokumentasi Aethra 03 supaya bisa dirangkum di album angkatan ini.
 			</p>
 		</aside>
 	</section>
@@ -250,7 +266,7 @@ const serializedSlides = JSON.stringify(lightboxSlides).replace(/</g, '\\u003c')
 				<img class="lb-img" data-lb-img hidden alt="" />
 				<div class="lb-placeholder" data-lb-placeholder hidden>
 					<span class="lb-ph-star" aria-hidden="true">✦</span>
-					<p>Belum ada foto pada agenda ini. Foto yang diunggah kurator akan tampil di sini.</p>
+					<p>Foto untuk kegiatan ini segera menyusul dari koleksi teman-teman Aethra 03.</p>
 				</div>
 			</div>
 
@@ -268,7 +284,12 @@ const serializedSlides = JSON.stringify(lightboxSlides).replace(/</g, '\\u003c')
 </BaseLayout>
 
 <script>
+	import { gsap } from 'gsap';
+	import { Flip } from 'gsap/Flip';
 	import { initMotion } from '../scripts/motion';
+	import { wrapIndex } from '../utils/yearbook';
+
+	gsap.registerPlugin(Flip);
 
 	interface LightboxSlide {
 		judul: string;
@@ -277,6 +298,7 @@ const serializedSlides = JSON.stringify(lightboxSlides).replace(/</g, '\\u003c')
 		src?: string;
 	}
 
+	const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 	const dataEl = document.getElementById('cipta-slides-data');
 	const slides: LightboxSlide[] = dataEl?.textContent ? JSON.parse(dataEl.textContent) : [];
 
@@ -295,7 +317,7 @@ const serializedSlides = JSON.stringify(lightboxSlides).replace(/</g, '\\u003c')
 
 	const renderSlide = (index: number) => {
 		if (!slides.length) return;
-		currentSlide = ((index % slides.length) + slides.length) % slides.length;
+		currentSlide = wrapIndex(index, slides.length);
 		const slide = slides[currentSlide];
 		if (!slide) return;
 
@@ -350,8 +372,32 @@ const serializedSlides = JSON.stringify(lightboxSlides).replace(/</g, '\\u003c')
 		}
 	});
 
-	// Filter & Pencarian Kegiatan
+	// Pengalih Tampilan Linimasa vs Meja Polaroid
+	const listEl = document.querySelector<HTMLElement>('[data-cipta-list]');
 	const items = Array.from(document.querySelectorAll<HTMLElement>('[data-cipta-item]'));
+	const viewBtns = document.querySelectorAll<HTMLButtonElement>('[data-cipta-view]');
+
+	viewBtns.forEach((btn) => {
+		btn.addEventListener('click', () => {
+			const mode = btn.dataset.ciptaView ?? 'timeline';
+			viewBtns.forEach((b) => b.classList.toggle('is-active', b === btn));
+			if (!listEl) return;
+
+			const state = !reducedMotion ? Flip.getState(items) : null;
+			listEl.classList.toggle('is-polaroid-wall', mode === 'polaroid');
+
+			if (state && !reducedMotion) {
+				Flip.from(state, {
+					duration: 0.48,
+					ease: 'power2.inOut',
+					stagger: 0.04,
+					simple: true,
+				});
+			}
+		});
+	});
+
+	// Filter & Pencarian Kegiatan
 	const searchInput = document.querySelector<HTMLInputElement>('[data-cipta-search]');
 	const filterBtns = document.querySelectorAll<HTMLButtonElement>('[data-cipta-filter]');
 	const resetBtn = document.querySelector<HTMLButtonElement>('[data-cipta-reset]');
@@ -422,13 +468,15 @@ const serializedSlides = JSON.stringify(lightboxSlides).replace(/</g, '\\u003c')
 <style>
 	.page-head {
 		padding-top: clamp(3rem, 6vw, 4.5rem);
-		padding-bottom: 2.5rem;
+		padding-bottom: 2.75rem;
 		border-bottom: 1px solid var(--border);
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-end;
-		gap: 2rem;
-		flex-wrap: wrap;
+	}
+
+	.head-grid {
+		display: grid;
+		grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.85fr);
+		gap: 2.5rem;
+		align-items: center;
 	}
 
 	.head-copy {
@@ -441,27 +489,40 @@ const serializedSlides = JSON.stringify(lightboxSlides).replace(/</g, '\\u003c')
 		margin: 0;
 	}
 
-	.stat-pill {
-		display: flex;
-		align-items: baseline;
-		gap: 0.5rem;
-		padding: 0.6rem 1.05rem;
-		border: 1px solid var(--border);
-		border-radius: var(--radius-pill);
+	.view-card {
 		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-lg);
+		padding: 1.25rem 1.4rem;
+		display: grid;
+		gap: 0.9rem;
 	}
 
-	.stat-pill strong {
-		font-family: var(--font-serif);
-		font-size: 1.35rem;
-		color: var(--navy);
-		line-height: 1;
+	.vc-top {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 0.75rem;
+		flex-wrap: wrap;
 	}
 
-	.stat-pill span {
-		font-size: 0.76rem;
-		font-weight: 500;
+	.vc-label {
+		font-size: 0.7rem;
+		font-weight: 600;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--gold);
+	}
+
+	.vc-count {
+		font-size: 0.78rem;
 		color: var(--ink-faint);
+	}
+
+	.vc-buttons {
+		display: flex;
+		gap: 0.5rem;
+		flex-wrap: wrap;
 	}
 
 	.controls-wrap {
@@ -497,6 +558,29 @@ const serializedSlides = JSON.stringify(lightboxSlides).replace(/</g, '\\u003c')
 		gap: 2.5rem;
 	}
 
+	/* Mode Meja Polaroid */
+	.timeline-list.is-polaroid-wall {
+		grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+		gap: 1.75rem;
+		align-items: start;
+	}
+
+	.timeline-list.is-polaroid-wall .agenda-item {
+		grid-template-columns: 1fr;
+		gap: 0.75rem;
+	}
+
+	.timeline-list.is-polaroid-wall .agenda-date {
+		position: static;
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: baseline;
+	}
+
+	.timeline-list.is-polaroid-wall .agenda-card {
+		padding: 1.25rem;
+	}
+
 	.agenda-item {
 		display: grid;
 		grid-template-columns: 200px minmax(0, 1fr);
@@ -511,22 +595,24 @@ const serializedSlides = JSON.stringify(lightboxSlides).replace(/</g, '\\u003c')
 	.agenda-date {
 		display: flex;
 		flex-direction: column;
-		gap: 0.15rem;
+		gap: 0.2rem;
 		padding-top: 0.35rem;
 		position: sticky;
 		top: 5.5rem;
 	}
 
-	.date-label {
-		font-size: 0.84rem;
+	.date-badge {
+		font-family: var(--font-mono);
+		font-size: 0.68rem;
+		letter-spacing: 0.14em;
+		color: var(--gold);
 		font-weight: 600;
-		color: var(--navy);
 	}
 
-	.date-year {
-		font-family: var(--font-mono);
-		font-size: 0.74rem;
-		color: var(--gold);
+	.date-label {
+		font-size: 0.88rem;
+		font-weight: 600;
+		color: var(--navy);
 	}
 
 	.agenda-card {
@@ -535,16 +621,16 @@ const serializedSlides = JSON.stringify(lightboxSlides).replace(/</g, '\\u003c')
 		border-radius: var(--radius-lg);
 		padding: clamp(1.4rem, 3.5vw, 2.25rem);
 		display: grid;
-		gap: 1.5rem;
+		gap: 1.4rem;
 	}
 
 	.agenda-head h2 {
-		font-size: clamp(1.75rem, 3.5vw, 2.45rem);
+		font-size: clamp(1.65rem, 3.2vw, 2.3rem);
 		margin: 0 0 0.45rem;
 	}
 
 	.agenda-desc {
-		font-size: 0.98rem;
+		font-size: 0.96rem;
 		color: var(--ink-muted);
 		margin: 0;
 		max-width: 42rem;
@@ -626,22 +712,16 @@ const serializedSlides = JSON.stringify(lightboxSlides).replace(/</g, '\\u003c')
 
 	.curator-note {
 		margin-top: 2.5rem;
-		padding: 1.15rem 1.4rem;
-		border-radius: var(--radius);
+		padding: 1.2rem 1.45rem;
+		border-radius: var(--radius-lg);
 		background: var(--surface);
 		border: 1px solid var(--border);
-		font-size: 0.86rem;
+		font-size: 0.9rem;
 		color: var(--ink-muted);
 	}
 
 	.curator-note p {
 		margin: 0;
-	}
-
-	.curator-note code {
-		font-family: var(--font-mono);
-		font-size: 0.8rem;
-		color: var(--navy);
 	}
 
 	/* Lightbox */
@@ -742,7 +822,10 @@ const serializedSlides = JSON.stringify(lightboxSlides).replace(/</g, '\\u003c')
 		color: var(--ink-faint);
 	}
 
-	@media (max-width: 820px) {
+	@media (max-width: 860px) {
+		.head-grid {
+			grid-template-columns: 1fr;
+		}
 		.agenda-item {
 			grid-template-columns: 1fr;
 			gap: 0.75rem;

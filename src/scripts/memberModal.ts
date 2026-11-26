@@ -46,7 +46,7 @@ export function setupMemberModal(items: MemberItem[]) {
 
 		if (noEl) noEl.textContent = `#${item.no}`;
 		if (statusEl) {
-			statusEl.textContent = item.tercatat ? 'Profil Terisi' : 'Kursi Menunggu';
+			statusEl.textContent = item.tercatat ? 'Profil Teman' : 'Kursi Kosong';
 		}
 		if (counterEl) {
 			counterEl.textContent = `${String(currentIndex + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}`;

@@ -30,8 +30,8 @@ const kontakSheet: MemberItem[] = await Promise.all(
 			return {
 				no,
 				inisial: '',
-				nama: `Menunggu Profil Rekan #${no}`,
-				meta: 'Slot dokumentasi terbuka untuk anggota Aethra 03',
+				nama: `Kursi #${no}`,
+				meta: 'Menunggu profil teman Aethra 03',
 				tercatat: false,
 			};
 		}
@@ -65,26 +65,26 @@ const spotlightAwal = kontakSheet.find((item) => item.tercatat) ?? kontakSheet[0
 const serializedMembers = JSON.stringify(kontakSheet).replace(/</g, '\\u003c');
 
 const manifesto =
-	'Enam puluh empat orang dari berbagai daerah, dipersatukan dalam satu masa. Di halaman buku tahunan ini kita simpan wajah, cerita, dan jejak langkah agar tetap hangat diingat setelah masa bakti usai.';
+	'Datang dari kota dan kampus yang berbeda, kita pernah berbagi meja, tenggat waktu, dan tawa yang sama. Halaman ini dibuat sederhana supaya kapan pun kita menoleh ke belakang, hangatnya tetap utuh.';
 
 const pilars = [
 	{
 		no: '01',
 		bab: 'PILAR PERTAMA',
 		kata: 'Cipta',
-		ringkas: 'Karya, dokumentasi kegiatan, dan jejak proyek yang kita bangun bersama.',
+		ringkas: 'Foto kegiatan, karya bareng, dan jejak keseharian selama di kementerian.',
 	},
 	{
 		no: '02',
 		bab: 'PILAR KEDUA',
 		kata: 'Rasa',
-		ringkas: 'Cerita spontan, tawa di sela kesibukan, dan pesan hangat antarteman.',
+		ringkas: 'Cerita receh, momen canggung minggu pertama, dan pesan untuk satu sama lain.',
 	},
 	{
 		no: '03',
 		bab: 'PILAR KETIGA',
 		kata: 'Karsa',
-		ringkas: 'Semangat belajar dan pengabdian yang kita bawa pulang ke daerah masing-masing.',
+		ringkas: 'Jejaring pertemanan dan semangat pengabdian yang ikut pulang ke daerah.',
 	},
 ];
 
@@ -95,11 +95,11 @@ const babArsip = [
 	{
 		id: 'rasi',
 		nomor: 'BAGIAN 01',
-		halaman: `${peserta.length} / 64 Rekan`,
+		halaman: `${peserta.length} / 64 Teman`,
 		judul: 'Rasi Aethra',
-		sub: 'Direktori 64 Rekan Seperjuangan',
+		sub: 'Kenalan Sama 64 Teman Seangkatan',
 		deskripsi:
-			'Wajah, profil singkat, asal daerah, dan pesan kenangan dari setiap anggota Masadagri Batch III.',
+			'Foto, kota asal, unit penempatan, dan satu hal menarik dari tiap teman Masadagri Batch 3.',
 		href: '/rasi',
 	},
 	{
@@ -107,9 +107,9 @@ const babArsip = [
 		nomor: 'BAGIAN 02',
 		halaman: `${kenangan.length} Cerita`,
 		judul: 'Jejak Rasa',
-		sub: 'Catatan & Momen Bermakna',
+		sub: 'Dinding Cerita & Pesan Hangat',
 		deskripsi:
-			'Kisah-kisah spontan, kebiasaan lucu saat bertugas, hingga kesan mendalam selama di kementerian.',
+			'Kejadian paling berkesan di ruang kerja sampai pesan tulus yang sempat tertinggal di grup.',
 		href: '/rasa',
 	},
 	{
@@ -117,9 +117,9 @@ const babArsip = [
 		nomor: 'BAGIAN 03',
 		halaman: `${kegiatan.length} Agenda`,
 		judul: 'Galeri Cipta',
-		sub: 'Dokumentasi Visual Kegiatan',
+		sub: 'Album Kegiatan & Momen Bareng',
 		deskripsi:
-			'Koleksi foto kegiatan resmi, rapat koordinasi, hingga potret kebersamaan di luar jam dinas.',
+			'Kumpulan foto kegiatan resmi, diskusi lintas divisi, hingga potret santai sepulang kantor.',
 		href: '/cipta',
 	},
 ] as const;
@@ -128,9 +128,9 @@ const marqueeItems = [
 	'Cipta',
 	'Rasa',
 	'Karsa',
-	'Rumah Aethra 03',
-	'Enam Puluh Empat Rekan Seperjuangan',
-	'Masadagri Batch III',
+	'Aethra 03',
+	'64 Teman Seangkatan',
+	'Masadagri Batch 3',
 ];
 ---
 
@@ -139,7 +139,7 @@ const marqueeItems = [
 	<section class="hero" data-hero>
 		<div class="container hero-layout">
 			<div class="hero-content">
-				<p class="eyebrow" data-rise>Buku Tahunan Angkatan · Masadagri Batch III</p>
+				<p class="eyebrow" data-rise>Catatan Angkatan · Masadagri Batch 3</p>
 
 				<h1 class="hero-title" data-rise>
 					<span class="hero-brand-line">
@@ -147,36 +147,36 @@ const marqueeItems = [
 						<span class="hero-num">03</span>
 					</span>
 					<span class="hero-sub">
-						Enam puluh empat rekan, <em>satu masa</em> yang kita jaga bersama.
+						Enam puluh empat kepala, <em>ribuan cerita</em> dari satu masa magang yang sama.
 					</span>
 				</h1>
 
 				<p class="hero-lead" data-rise>
-					Ruang dokumentasi kebersamaan peserta Masadagri Batch III—tempat kita menyimpan wajah,
-					tawa di sela tugas, dan cerita yang tetap tinggal setelah masa bakti usai.
+					Tempat kita menyimpan wajah teman seperjuangan, obrolan receh di sela kerjaan, sampai
+					momen kecil yang bakal dirindukan waktu masing-masing kembali melangkah.
 				</p>
 
 				<div class="hero-cta" data-rise>
 					<a class="btn btn-primary" href="/rasi" data-magnetic data-cursor="Jelajahi">
-						Kenali 64 Rekan →
+						Kenalan Sama 64 Teman →
 					</a>
 					<a class="btn btn-secondary" href="#cerita" data-magnetic>
-						Baca Cerita Kita ↓
+						Baca Pengantar ↓
 					</a>
 				</div>
 
 				<dl class="hero-metrics" data-rise>
 					<div class="metric-item">
-						<dt>Rekan Seperjuangan</dt>
+						<dt>Teman Seangkatan</dt>
 						<dd>64</dd>
 					</div>
 					<div class="metric-item">
-						<dt>Pilar: Cipta · Rasa · Karsa</dt>
+						<dt>Cipta · Rasa · Karsa</dt>
 						<dd>03</dd>
 					</div>
 					<div class="metric-item">
 						<dt>Angkatan Masadagri</dt>
-						<dd>Batch III</dd>
+						<dd>Batch 3</dd>
 					</div>
 				</dl>
 			</div>
@@ -187,27 +187,27 @@ const marqueeItems = [
 					<div class="deck-card" data-deck-card data-cursor="Geser">
 						<Polaroid
 							variant="crest"
-							caption="Keluarga Besar Aethra 03"
+							caption="Aethra 03"
 							subcaption="Cipta · Rasa · Karsa"
-							tag="EDISI 03"
+							tag="BATCH 03"
 							rotation={-4}
 						/>
 					</div>
 					<div class="deck-card" data-deck-card data-cursor="Geser">
 						<Polaroid
 							variant="warm"
-							caption="Awal Pertemuan"
-							subcaption="64 Daerah · Satu Angkatan"
-							tag="PROLOG"
+							caption="Hari-Hari Pertama"
+							subcaption="Dari canggung jadi satu frekuensi"
+							tag="AWAL"
 							rotation={5}
 						/>
 					</div>
 					<div class="deck-card" data-deck-card data-cursor="Geser">
 						<Polaroid
 							variant="editorial"
-							caption="Tawa di Sela Tugas"
-							subcaption="Kementerian Dalam Negeri · Jakarta"
-							tag="MEMORI"
+							caption="Di Sela Kesibukan"
+							subcaption="Kopi sore, diskusi, dan tawa bareng"
+							tag="MOMEN"
 							rotation={-2}
 						/>
 					</div>
@@ -271,15 +271,15 @@ const marqueeItems = [
 		</div>
 	</div>
 
-	<!-- 3. MANIFESTO / PROLOG -->
+	<!-- 3. MANIFESTO / PENGANTAR -->
 	<section id="cerita" class="manifesto-section" data-manifesto>
 		<div class="container manifesto-layout">
 			<div class="manifesto-rail">
-				<p class="eyebrow">01 — Prolog</p>
+				<p class="eyebrow">01 — Pengantar</p>
 				<p class="rail-note">
-					Catatan Pembuka
+					Sepatah Kata
 					<br />
-					Keluarga Aethra 03
+					untuk Aethra 03
 				</p>
 				<div class="rail-meter" aria-hidden="true">
 					<span class="rail-meter-bar" data-manifesto-bar></span>
@@ -293,8 +293,8 @@ const marqueeItems = [
 					</p>
 				</blockquote>
 				<div class="manifesto-footer">
-					<span class="sign-line">— Rekan-Rekan Aethra 03</span>
-					<span class="sign-location">Kementerian Dalam Negeri · Jakarta</span>
+					<span class="sign-line">— Teman-Teman Aethra 03</span>
+					<span class="sign-location">Jakarta Pusat</span>
 				</div>
 			</div>
 		</div>
@@ -304,12 +304,12 @@ const marqueeItems = [
 	<section class="motto-section" aria-labelledby="motto-judul">
 		<div class="container">
 			<div class="section-head">
-				<p class="eyebrow">02 — Nilai Angkatan</p>
+				<p class="eyebrow">02 — Motto Kita</p>
 				<h2 id="motto-judul" class="section-title">
-					Tiga Kata yang Merangkum <em>Perjalanan Kita</em>
+					Tiga Kata di Balik <em>Nama Aethra</em>
 				</h2>
 				<p class="section-desc">
-					Pilih tiap pilar di kiri untuk melihat cuplikan langsung isi arsip Aethra 03.
+					Pilih salah satu pilar di bawah untuk mengintip langsung isi kenangan yang tersimpan.
 				</p>
 			</div>
 
@@ -378,12 +378,12 @@ const marqueeItems = [
 								></path>
 							</svg>
 						</div>
-						<h3 class="panel-title">Karya & Dokumentasi Visual</h3>
+						<h3 class="panel-title">Foto &amp; Dokumentasi Kegiatan</h3>
 						<p class="panel-desc">
 							{
 								contohKegiatan
-									? `Terbaru di arsip: "${contohKegiatan.data.judul}" — ${contohKegiatan.data.deskripsi ?? 'Dokumentasi kegiatan angkatan.'}`
-									: 'Rekam jejak foto dan video kegiatan bersama selama masa bakti.'
+									? `Terbaru di album: "${contohKegiatan.data.judul}". ${contohKegiatan.data.deskripsi ?? ''}`
+									: 'Rekam jejak foto dan cuplikan kegiatan bersama selama masa magang.'
 							}
 						</p>
 						<a class="btn btn-primary btn-sm" href="/cipta">Buka Galeri Cipta →</a>
@@ -393,19 +393,19 @@ const marqueeItems = [
 					<div class="pilar-panel" data-pilar-panel="1" hidden>
 						<div class="panel-top">
 							<span class="panel-badge">02 · RASA</span>
-							<span class="panel-stat">{kenangan.length} Catatan Kenangan</span>
+							<span class="panel-stat">{kenangan.length} Cerita Masuk</span>
 						</div>
 						<div class="panel-quote-box">
 							<p class="panel-quote">
-								“{contohKenangan?.data.teks ?? 'Cerita kecil yang membuat masa magang tak terlupakan.'}”
+								“{contohKenangan?.data.teks ?? 'Cerita kecil yang bikin masa magang susah dilupakan.'}”
 							</p>
 							<span class="panel-quote-author">
-								— {contohKenangan?.data.nama ?? 'Rekan Aethra 03'}
+								— {contohKenangan?.data.nama ?? 'Teman Aethra 03'}
 							</span>
 						</div>
-						<h3 class="panel-title">Cerita & Pesan Antarteman</h3>
+						<h3 class="panel-title">Cerita &amp; Pesan Antarteman</h3>
 						<p class="panel-desc">
-							Kumpulan kisah spontan, tawa di sela pekerjaan, dan pesan hangat dari rekan-rekan
+							Potongan kisah spontan, tawa di sela tugas, dan ucapan tulus yang dikirim teman-teman
 							Aethra 03.
 						</p>
 						<a class="btn btn-primary btn-sm" href="/rasa">Baca Jejak Rasa →</a>
@@ -415,20 +415,21 @@ const marqueeItems = [
 					<div class="pilar-panel" data-pilar-panel="2" hidden>
 						<div class="panel-top">
 							<span class="panel-badge">03 · KARSA</span>
-							<span class="panel-stat">64 Titik Nusantara</span>
+							<span class="panel-stat">64 Kursi Angkatan</span>
 						</div>
 						<div class="panel-crest-box" aria-hidden="true">
 							<span class="crest-star">✦</span>
 							<p class="crest-line">
-								Membawa pulang ilmu, jejaring, dan semangat pengabdian ke 64 titik Nusantara.
+								Dari Jakarta kembali ke kota masing-masing dengan cerita, jejaring, dan semangat
+								yang tetap menyambung.
 							</p>
 						</div>
-						<h3 class="panel-title">Tekad & Kebersamaan Angkatan</h3>
+						<h3 class="panel-title">Jejaring yang Tetap Terhubung</h3>
 						<p class="panel-desc">
-							Setiap rekan pulang ke daerah masing-masing dengan cerita dan ikatan yang tetap
-							terhubung di sini.
+							Walau penempatan berbeda dan nanti berpisah jarak, semua kenalan satu angkatan
+							tetap bisa disapa kapan saja di Rasi Aethra.
 						</p>
-						<a class="btn btn-primary btn-sm" href="/rasi">Kenali 64 Rekan →</a>
+						<a class="btn btn-primary btn-sm" href="/rasi">Kenali 64 Teman →</a>
 					</div>
 				</div>
 			</div>
@@ -440,17 +441,18 @@ const marqueeItems = [
 		<div class="container">
 			<div class="mosaic-head">
 				<div>
-					<p class="eyebrow">03 — Konstelasi Angkatan</p>
+					<p class="eyebrow">03 — Wajah Angkatan</p>
 					<h2 id="mosaic-judul" class="section-title">
-						Enam Puluh Empat Wajah, <em>Satu Rasi</em>
+						Satu Angkatan dalam <em>64 Petak</em>
 					</h2>
 					<p class="section-desc">
-						Cari, saring, atau klik petak mana saja untuk membuka kartu profil anggota Aethra 03.
+						Cari nama, saring yang sudah terisi, atau klik petak mana saja untuk membaca kartu
+						teman.
 					</p>
 				</div>
 				<div class="mosaic-status">
 					<span class="status-count">{peserta.length} / 64</span>
-					<span class="status-label">Profil Terisi</span>
+					<span class="status-label">Profil Masuk</span>
 				</div>
 			</div>
 
@@ -461,19 +463,19 @@ const marqueeItems = [
 							Semua (64)
 						</button>
 						<button type="button" class="chip" data-mosaic-filter="filled">
-							Terisi ({peserta.length})
+							Sudah Masuk ({peserta.length})
 						</button>
 						<button type="button" class="chip" data-mosaic-wave data-cursor="Mainkan">
 							Gelombang ✦
 						</button>
 					</div>
 					<div class="mosaic-search-wrap">
-						<label class="sr-only" for="mosaic-search">Cari rekan di mosaik 64</label>
+						<label class="sr-only" for="mosaic-search">Cari teman di mosaik 64</label>
 						<input
 							id="mosaic-search"
 							type="search"
 							class="search-field"
-							placeholder="Cari nama atau daerah..."
+							placeholder="Cari nama atau kota asal..."
 							data-mosaic-search
 						/>
 					</div>
@@ -489,7 +491,7 @@ const marqueeItems = [
 					</div>
 					<div class="spotlight-actions">
 						<button type="button" class="chip" data-spotlight-open>Buka Kartu →</button>
-						<a class="spotlight-link" href="/rasi">Direktori Penuh</a>
+						<a class="spotlight-link" href="/rasi">Lihat Semua di Rasi</a>
 					</div>
 				</div>
 
@@ -531,10 +533,10 @@ const marqueeItems = [
 
 				<div class="mosaic-footer">
 					<p class="mosaic-hint">
-						Arahkan atau ketuk petak untuk pratinjau cepat; klik petak untuk membuka kartu profil
-						lengkap.
+						Sentuh petak untuk pratinjau singkat, atau klik untuk membuka profil lengkap beserta
+						pesannya.
 					</p>
-					<a class="btn btn-primary" href="/rasi" data-magnetic>Jelajahi Semua Profil →</a>
+					<a class="btn btn-primary" href="/rasi" data-magnetic>Buka Rasi Aethra →</a>
 				</div>
 			</div>
 		</div>
@@ -544,12 +546,12 @@ const marqueeItems = [
 	<section class="index-section" aria-labelledby="index-judul">
 		<div class="container">
 			<div class="section-head">
-				<p class="eyebrow">04 — Jelajahi Buku Tahunan</p>
+				<p class="eyebrow">04 — Ruang Dokumentasi</p>
 				<h2 id="index-judul" class="section-title">
-					Telusuri Setiap <em>Lembar Kenangan</em>
+					Mau Buka <em>Bagian Mana Dulu?</em>
 				</h2>
 				<p class="section-desc">
-					Tiga bagian utama tempat wajah, cerita, dan foto kebersamaan Aethra 03 dirawat.
+					Pilih halaman di bawah untuk melihat profil teman, cerita kenangan, atau album kegiatan.
 				</p>
 			</div>
 

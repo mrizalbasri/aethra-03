@@ -8,6 +8,7 @@ const kegiatanList = await getCollection('kegiatan');
 const kegiatanMap = new Map(kegiatanList.map((k) => [k.id, k.data.judul]));
 
 const items = kenangan.map((k, idx) => ({
+	id: k.id,
 	index: idx,
 	no: String(idx + 1).padStart(2, '0'),
 	nama: k.data.nama,
@@ -15,6 +16,7 @@ const items = kenangan.map((k, idx) => ({
 	divisi: k.data.divisi ?? '',
 	kegiatanJudul: k.data.kegiatan ? (kegiatanMap.get(k.data.kegiatan) ?? k.data.kegiatan) : '',
 	teks: k.data.teks,
+	variant: idx % 5 === 2 ? 'navy' : idx % 3 === 1 ? 'warm' : 'white',
 }));
 
 const tagSet = new Set<string>();
@@ -25,10 +27,11 @@ items.forEach((item) => {
 const filterTags = Array.from(tagSet).sort((a, b) => a.localeCompare(b, 'id'));
 
 const prompts = [
-	'Momen apa yang paling bikin satu ruangan tertawa saat dinas?',
-	'Hal paling tak terduga yang kamu temui di minggu pertama magang?',
-	'Satu kalimat terima kasih untuk rekan semeja atau seangkatan?',
-	'Kebiasaan jam istirahat atau kopi sore yang bakal paling dirindukan?',
+	'Momen apa yang paling bikin satu ruangan tertawa waktu lagi sibuk-sibuknya?',
+	'Hal paling tidak terduga yang kamu temui di minggu pertama masuk unit kerja?',
+	'Satu kalimat terima kasih buat teman semeja atau kawan seangkatan?',
+	'Kebiasaan kopi sore atau makan siang bareng mana yang bakal paling dirindukan?',
+	'Kalau masa magang ini dibuatkan judul film, judul apa yang paling cocok?',
 ];
 
 const serializedMemories = JSON.stringify(items).replace(/</g, '\\u003c');
@@ -40,48 +43,61 @@ const serializedPrompts = JSON.stringify(prompts).replace(/</g, '\\u003c');
 	description="Dinding cerita, tawa, dan pesan hangat antarteman angkatan Aethra 03 Masadagri."
 >
 	<section class="page-head container">
-		<div class="head-copy">
-			<p class="eyebrow">02 — Jejak Rasa</p>
-			<h1>Dinding Cerita & <em>Pesan Hangat</em></h1>
-			<p class="head-desc">
-				Kumpulan potongan memori, cerita spontan, dan ucapan untuk rekan seperjuangan selama
-				menjalani masa bakti di Kementerian Dalam Negeri.
-			</p>
-		</div>
-		<div class="head-stats">
-			<div class="stat-pill">
-				<strong>{items.length}</strong>
-				<span>Catatan Tersimpan</span>
+		<div class="head-grid">
+			<div class="head-copy">
+				<p class="eyebrow">02 — Jejak Rasa</p>
+				<h1>Cerita Kecil yang <em>Bikin Kangen</em></h1>
+				<p class="head-desc">
+					Dari kejadian lucu di minggu pertama sampai pesan tulus buat teman semeja. Semua cerita
+					dikumpulkan di sini supaya tidak hilang tertumpuk chat.
+				</p>
+				<div class="head-stats">
+					<div class="stat-pill">
+						<strong>{items.length}</strong>
+						<span>Cerita Masuk</span>
+					</div>
+					<div class="stat-pill">
+						<strong data-fav-total>0</strong>
+						<span>Tersimpan ★</span>
+					</div>
+				</div>
 			</div>
-		</div>
-	</section>
 
-	<section class="prompt-wrap container" aria-label="Pemantik cerita">
-		<div class="prompt-banner">
-			<div class="prompt-copy">
-				<span class="prompt-label">Pemantik Cerita Angkatan</span>
+			<aside class="prompt-card" aria-label="Pemantik cerita angkatan">
+				<div class="prompt-head">
+					<span class="prompt-counter" data-prompt-counter>
+						PERTANYAAN 01 / {String(prompts.length).padStart(2, '0')}
+					</span>
+					<span class="prompt-tag">Pemantik Obrolan</span>
+				</div>
 				<p class="prompt-text" data-prompt-text>{prompts[0]}</p>
-			</div>
-			<button type="button" class="chip" data-prompt-next data-cursor="Ganti">
-				Ganti Pertanyaan ↻
-			</button>
+				<div class="prompt-actions">
+					<button type="button" class="chip" data-prompt-next data-cursor="Ganti">
+						Pertanyaan Lain ↻
+					</button>
+					<button type="button" class="chip" data-prompt-copy>Salin Pertanyaan</button>
+				</div>
+			</aside>
 		</div>
 	</section>
 
 	<section class="controls-wrap container" aria-label="Filter dan pencarian cerita">
 		<div class="controls-bar">
 			<div class="search-wrap">
-				<label class="sr-only" for="rasa-search">Cari cerita atau nama penulis</label>
+				<label class="sr-only" for="rasa-search">Cari isi cerita, nama teman, atau momen</label>
 				<input
 					id="rasa-search"
 					type="search"
 					class="search-field"
-					placeholder="Cari cerita, nama, atau kegiatan..."
+					placeholder="Cari isi cerita, nama teman, atau momen..."
 					data-rasa-search
 				/>
 			</div>
 			<div class="filter-group">
-				<button type="button" class="chip is-active" data-rasa-tag="all">Semua</button>
+				<button type="button" class="chip is-active" data-rasa-tag="all">Semua Cerita</button>
+				<button type="button" class="chip" data-rasa-fav-filter>
+					Tersimpan ★ (<span data-fav-filter-count>0</span>)
+				</button>
 				{
 					filterTags.map((tag) => (
 						<button type="button" class="chip" data-rasa-tag={tag}>
@@ -90,7 +106,7 @@ const serializedPrompts = JSON.stringify(prompts).replace(/</g, '\\u003c');
 					))
 				}
 				<button type="button" class="chip" data-rasa-shuffle data-cursor="Acak">
-					Acak Cerita ↻
+					Acak Kartu ↻
 				</button>
 			</div>
 		</div>
@@ -100,50 +116,69 @@ const serializedPrompts = JSON.stringify(prompts).replace(/</g, '\\u003c');
 		<div class="rasa-grid" data-rasa-grid>
 			{
 				items.map((item) => (
-					<button
-						type="button"
+					<article
 						class="story-card"
+						data-variant={item.variant}
 						data-rasa-card
+						data-id={item.id}
 						data-index={item.index}
 						data-tags={`${item.divisi}|${item.kegiatanJudul}`}
 						data-search={`${item.nama} ${item.divisi} ${item.kegiatanJudul} ${item.teks}`.toLowerCase()}
 						data-tilt
-						data-cursor="Baca"
 					>
 						<div class="story-top">
 							<span class="story-mark" aria-hidden="true">
 								“
 							</span>
-							{item.kegiatanJudul && <span class="story-pill">{item.kegiatanJudul}</span>}
-						</div>
-
-						<p class="story-text">{item.teks}</p>
-
-						<div class="story-foot">
-							<div class="story-author">
-								<span class="author-badge">{item.inisial}</span>
-								<div class="author-meta">
-									<strong>{item.nama}</strong>
-									{item.divisi && <span>{item.divisi}</span>}
-								</div>
+							<div class="story-top-actions">
+								{item.kegiatanJudul && <span class="story-pill">{item.kegiatanJudul}</span>}
+								<button
+									type="button"
+									class="fav-btn"
+									data-fav-id={item.id}
+									aria-pressed="false"
+									aria-label={`Simpan cerita dari ${item.nama}`}
+									title="Simpan ke favorit"
+								>
+									☆
+								</button>
 							</div>
-							<span class="story-read">Baca penuh →</span>
 						</div>
-					</button>
+
+						<button
+							type="button"
+							class="story-open-area"
+							data-open-story={item.index}
+							data-cursor="Baca"
+						>
+							<p class="story-text">{item.teks}</p>
+
+							<div class="story-foot">
+								<div class="story-author">
+									<span class="author-badge">{item.inisial}</span>
+									<div class="author-meta">
+										<strong>{item.nama}</strong>
+										{item.divisi && <span>{item.divisi}</span>}
+									</div>
+								</div>
+								<span class="story-read">Baca penuh →</span>
+							</div>
+						</button>
+					</article>
 				))
 			}
 		</div>
 
 		<div class="empty-state" data-rasa-empty hidden>
-			<p>Tidak ada cerita yang cocok dengan filter atau kata kunci ini.</p>
-			<button type="button" class="btn btn-secondary" data-rasa-reset>Reset Pencarian</button>
+			<p>Belum ada cerita yang cocok dengan filter atau pencarian ini.</p>
+			<button type="button" class="btn btn-secondary" data-rasa-reset>Reset Filter</button>
 		</div>
 
 		<aside class="curator-note">
 			<p>
-				Punya cerita lucu atau pesan untuk teman seangkatan? Kirim melalui pengurus/kurator
-				angkatan—setiap catatan dikurasi ke <code>src/content/kenangan/</code> agar tetap rapi dan
-				menjaga privasi.
+				Punya cerita seru atau pesan yang ingin dititipkan buat teman Aethra 03? Kirimkan lewat
+				tautan pengumpulan cerita angkatan atau hubungi teman pengurus supaya ikut dipajang di
+				halaman ini.
 			</p>
 		</aside>
 	</section>
@@ -185,10 +220,12 @@ const serializedPrompts = JSON.stringify(prompts).replace(/</g, '\\u003c');
 	import { Flip } from 'gsap/Flip';
 	import { initMotion } from '../scripts/motion';
 	import { initTiltCards } from '../scripts/interactions';
+	import { wrapIndex } from '../utils/yearbook';
 
 	gsap.registerPlugin(Flip);
 
 	interface MemoryItem {
+		id: string;
 		index: number;
 		no: string;
 		nama: string;
@@ -198,21 +235,33 @@ const serializedPrompts = JSON.stringify(prompts).replace(/</g, '\\u003c');
 		teks: string;
 	}
 
+	const FAV_KEY = 'aethra-rasa-favs';
 	const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 	const memEl = document.getElementById('rasa-memories-data');
 	const promptEl = document.getElementById('rasa-prompts-data');
 	const memories: MemoryItem[] = memEl?.textContent ? JSON.parse(memEl.textContent) : [];
 	const prompts: string[] = promptEl?.textContent ? JSON.parse(promptEl.textContent) : [];
 
-	// 1. Prompt Switcher
+	// 1. Kartu Pemantik Obrolan & Salin Pertanyaan
+	const promptCounterEl = document.querySelector<HTMLElement>('[data-prompt-counter]');
 	const promptTextEl = document.querySelector<HTMLElement>('[data-prompt-text]');
 	const promptNextBtn = document.querySelector<HTMLButtonElement>('[data-prompt-next]');
+	const promptCopyBtn = document.querySelector<HTMLButtonElement>('[data-prompt-copy]');
 	let promptIdx = 0;
+
+	const updatePromptCounter = () => {
+		if (!promptCounterEl) return;
+		const cur = String(promptIdx + 1).padStart(2, '0');
+		const tot = String(prompts.length).padStart(2, '0');
+		promptCounterEl.textContent = `PERTANYAAN ${cur} / ${tot}`;
+	};
 
 	promptNextBtn?.addEventListener('click', () => {
 		if (!promptTextEl || prompts.length === 0) return;
 		promptIdx = (promptIdx + 1) % prompts.length;
 		const nextText = prompts[promptIdx] ?? '';
+		updatePromptCounter();
+
 		if (reducedMotion) {
 			promptTextEl.textContent = nextText;
 			return;
@@ -226,6 +275,22 @@ const serializedPrompts = JSON.stringify(prompts).replace(/</g, '\\u003c');
 				gsap.fromTo(promptTextEl, { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.24 });
 			},
 		});
+	});
+
+	let copyTimer: number | undefined;
+	promptCopyBtn?.addEventListener('click', async () => {
+		const text = prompts[promptIdx] ?? '';
+		if (!text) return;
+		try {
+			await navigator.clipboard?.writeText(text);
+			promptCopyBtn.textContent = 'Tersalin ✓';
+			window.clearTimeout(copyTimer);
+			copyTimer = window.setTimeout(() => {
+				promptCopyBtn.textContent = 'Salin Pertanyaan';
+			}, 1600);
+		} catch {
+			// Abaikan jika izin clipboard dibatasi browser
+		}
 	});
 
 	// 2. Reader Modal
@@ -244,7 +309,7 @@ const serializedPrompts = JSON.stringify(prompts).replace(/</g, '\\u003c');
 
 	const renderMemory = (index: number) => {
 		if (!memories.length) return;
-		currentMem = ((index % memories.length) + memories.length) % memories.length;
+		currentMem = wrapIndex(index, memories.length);
 		const item = memories[currentMem];
 		if (!item) return;
 
@@ -252,7 +317,7 @@ const serializedPrompts = JSON.stringify(prompts).replace(/</g, '\\u003c');
 		if (rdTeks) rdTeks.textContent = item.teks;
 		if (rdInisial) rdInisial.textContent = item.inisial;
 		if (rdNama) rdNama.textContent = item.nama;
-		if (rdDivisi) rdDivisi.textContent = item.divisi || 'Anggota Aethra 03';
+		if (rdDivisi) rdDivisi.textContent = item.divisi || 'Teman Aethra 03';
 		if (rdCounter) {
 			rdCounter.textContent = `${String(currentMem + 1).padStart(2, '0')} / ${String(memories.length).padStart(2, '0')}`;
 		}
@@ -282,9 +347,49 @@ const serializedPrompts = JSON.stringify(prompts).replace(/</g, '\\u003c');
 		}
 	});
 
-	// 3. Filter, Search, Shuffle
+	// 3. Favorit (localStorage), Filter, Pencarian & Shuffle
+	const loadFavs = (): Set<string> => {
+		try {
+			const raw = window.localStorage.getItem(FAV_KEY);
+			if (!raw) return new Set();
+			const parsed = JSON.parse(raw);
+			return Array.isArray(parsed) ? new Set(parsed.filter((v): v is string => typeof v === 'string')) : new Set();
+		} catch {
+			return new Set();
+		}
+	};
+
+	const saveFavs = (set: Set<string>) => {
+		try {
+			window.localStorage.setItem(FAV_KEY, JSON.stringify(Array.from(set)));
+		} catch {
+			// Abaikan jika penyimpanan lokal dinonaktifkan
+		}
+	};
+
+	const favs = loadFavs();
+	const favTotalEl = document.querySelector<HTMLElement>('[data-fav-total]');
+	const favFilterCountEl = document.querySelector<HTMLElement>('[data-fav-filter-count]');
+	const favBtns = document.querySelectorAll<HTMLButtonElement>('[data-fav-id]');
+	const favFilterBtn = document.querySelector<HTMLButtonElement>('[data-rasa-fav-filter]');
+
+	const syncFavUI = () => {
+		const count = favs.size;
+		if (favTotalEl) favTotalEl.textContent = String(count);
+		if (favFilterCountEl) favFilterCountEl.textContent = String(count);
+
+		favBtns.forEach((btn) => {
+			const id = btn.dataset.favId ?? '';
+			const saved = favs.has(id);
+			btn.textContent = saved ? '★' : '☆';
+			btn.classList.toggle('is-saved', saved);
+			btn.setAttribute('aria-pressed', saved ? 'true' : 'false');
+		});
+	};
+
 	const grid = document.querySelector<HTMLElement>('[data-rasa-grid]');
-	const cards = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-rasa-card]'));
+	const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-rasa-card]'));
+	const openTriggers = document.querySelectorAll<HTMLButtonElement>('[data-open-story]');
 	const searchInput = document.querySelector<HTMLInputElement>('[data-rasa-search]');
 	const tagBtns = document.querySelectorAll<HTMLButtonElement>('[data-rasa-tag]');
 	const shuffleBtn = document.querySelector<HTMLButtonElement>('[data-rasa-shuffle]');
@@ -292,6 +397,7 @@ const serializedPrompts = JSON.stringify(prompts).replace(/</g, '\\u003c');
 	const emptyEl = document.querySelector<HTMLElement>('[data-rasa-empty]');
 
 	let activeTag = 'all';
+	let onlyFavs = false;
 	let query = '';
 
 	const applyFilters = () => {
@@ -299,11 +405,13 @@ const serializedPrompts = JSON.stringify(prompts).replace(/</g, '\\u003c');
 		let shown = 0;
 
 		cards.forEach((card) => {
+			const id = card.dataset.id ?? '';
 			const tags = (card.dataset.tags ?? '').split('|');
 			const haystack = card.dataset.search ?? '';
+			const favPass = !onlyFavs || favs.has(id);
 			const tagPass = activeTag === 'all' || tags.includes(activeTag);
 			const searchPass = !q || haystack.includes(q);
-			const visible = tagPass && searchPass;
+			const visible = favPass && tagPass && searchPass;
 
 			card.hidden = !visible;
 			if (visible) shown += 1;
@@ -312,9 +420,24 @@ const serializedPrompts = JSON.stringify(prompts).replace(/</g, '\\u003c');
 		if (emptyEl) emptyEl.hidden = shown > 0;
 	};
 
-	cards.forEach((card) => {
-		card.addEventListener('click', () => {
-			openMemory(Number(card.dataset.index ?? 0));
+	syncFavUI();
+
+	favBtns.forEach((btn) => {
+		btn.addEventListener('click', (e) => {
+			e.stopPropagation();
+			const id = btn.dataset.favId;
+			if (!id) return;
+			if (favs.has(id)) favs.delete(id);
+			else favs.add(id);
+			saveFavs(favs);
+			syncFavUI();
+			if (onlyFavs) applyFilters();
+		});
+	});
+
+	openTriggers.forEach((btn) => {
+		btn.addEventListener('click', () => {
+			openMemory(Number(btn.dataset.openStory ?? 0));
 		});
 	});
 
@@ -325,10 +448,24 @@ const serializedPrompts = JSON.stringify(prompts).replace(/</g, '\\u003c');
 
 	tagBtns.forEach((btn) => {
 		btn.addEventListener('click', () => {
+			onlyFavs = false;
+			favFilterBtn?.classList.remove('is-active');
 			activeTag = btn.dataset.rasaTag ?? 'all';
 			tagBtns.forEach((b) => b.classList.toggle('is-active', b === btn));
 			applyFilters();
 		});
+	});
+
+	favFilterBtn?.addEventListener('click', () => {
+		onlyFavs = !onlyFavs;
+		favFilterBtn.classList.toggle('is-active', onlyFavs);
+		if (onlyFavs) {
+			activeTag = 'all';
+			tagBtns.forEach((b) => b.classList.remove('is-active'));
+		} else {
+			tagBtns.forEach((b) => b.classList.toggle('is-active', b.dataset.rasaTag === 'all'));
+		}
+		applyFilters();
 	});
 
 	shuffleBtn?.addEventListener('click', () => {
@@ -350,7 +487,9 @@ const serializedPrompts = JSON.stringify(prompts).replace(/</g, '\\u003c');
 	resetBtn?.addEventListener('click', () => {
 		query = '';
 		activeTag = 'all';
+		onlyFavs = false;
 		if (searchInput) searchInput.value = '';
+		favFilterBtn?.classList.remove('is-active');
 		tagBtns.forEach((b) => b.classList.toggle('is-active', b.dataset.rasaTag === 'all'));
 		applyFilters();
 	});
@@ -371,13 +510,15 @@ const serializedPrompts = JSON.stringify(prompts).replace(/</g, '\\u003c');
 <style>
 	.page-head {
 		padding-top: clamp(3rem, 6vw, 4.5rem);
-		padding-bottom: 2.5rem;
+		padding-bottom: 2.75rem;
 		border-bottom: 1px solid var(--border);
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-end;
-		gap: 2rem;
-		flex-wrap: wrap;
+	}
+
+	.head-grid {
+		display: grid;
+		grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.95fr);
+		gap: 2.5rem;
+		align-items: center;
 	}
 
 	.head-copy {
@@ -387,14 +528,20 @@ const serializedPrompts = JSON.stringify(prompts).replace(/</g, '\\u003c');
 	.head-desc {
 		font-size: 1.02rem;
 		color: var(--ink-muted);
-		margin: 0;
+		margin: 0 0 1.5rem;
+	}
+
+	.head-stats {
+		display: flex;
+		gap: 0.75rem;
+		flex-wrap: wrap;
 	}
 
 	.stat-pill {
 		display: flex;
 		align-items: baseline;
 		gap: 0.5rem;
-		padding: 0.6rem 1.05rem;
+		padding: 0.55rem 1.05rem;
 		border: 1px solid var(--border);
 		border-radius: var(--radius-pill);
 		background: var(--surface);
@@ -413,43 +560,55 @@ const serializedPrompts = JSON.stringify(prompts).replace(/</g, '\\u003c');
 		color: var(--ink-faint);
 	}
 
-	.prompt-wrap {
-		padding-top: 2rem;
-	}
-
-	.prompt-banner {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		gap: 1.25rem;
-		flex-wrap: wrap;
+	/* Kartu Pemantik Obrolan */
+	.prompt-card {
 		background: var(--surface);
 		border: 1px solid var(--border);
 		border-radius: var(--radius-lg);
-		padding: 1.25rem 1.5rem;
+		padding: 1.4rem 1.5rem;
+		display: grid;
+		gap: 1rem;
 	}
 
-	.prompt-label {
-		display: block;
+	.prompt-head {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 0.75rem;
+		padding-bottom: 0.75rem;
+		border-bottom: 1px solid var(--border);
+	}
+
+	.prompt-counter {
+		font-family: var(--font-mono);
 		font-size: 0.68rem;
-		font-weight: 600;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
 		color: var(--gold);
-		margin-bottom: 0.25rem;
+		font-weight: 600;
+	}
+
+	.prompt-tag {
+		font-size: 0.72rem;
+		font-weight: 600;
+		color: var(--ink-faint);
 	}
 
 	.prompt-text {
 		font-family: var(--font-serif);
 		font-style: italic;
-		font-size: clamp(1.25rem, 2.5vw, 1.65rem);
+		font-size: clamp(1.3rem, 2.3vw, 1.65rem);
 		color: var(--navy);
 		margin: 0;
-		line-height: 1.25;
+		line-height: 1.3;
+	}
+
+	.prompt-actions {
+		display: flex;
+		gap: 0.6rem;
+		flex-wrap: wrap;
 	}
 
 	.controls-wrap {
-		padding-top: 1.5rem;
+		padding-top: 2rem;
 		padding-bottom: 1.75rem;
 	}
 
@@ -478,24 +637,32 @@ const serializedPrompts = JSON.stringify(prompts).replace(/</g, '\\u003c');
 
 	.rasa-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(295px, 1fr));
 		gap: 1.25rem;
 	}
 
 	.story-card {
-		text-align: left;
-		font-family: inherit;
 		background: #ffffff;
 		border: 1px solid var(--border);
 		border-radius: var(--radius-lg);
-		padding: 1.5rem;
+		padding: 1.45rem;
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
-		cursor: pointer;
+		gap: 0.75rem;
 		transition:
 			border-color 0.22s ease,
 			box-shadow 0.22s ease;
+	}
+
+	.story-card[data-variant='warm'] {
+		background: #fcfaf5;
+		border-color: #ebe3d0;
+	}
+
+	.story-card[data-variant='navy'] {
+		background: var(--navy);
+		border-color: var(--navy);
+		color: #ffffff;
 	}
 
 	.story-card[hidden] {
@@ -504,7 +671,7 @@ const serializedPrompts = JSON.stringify(prompts).replace(/</g, '\\u003c');
 
 	.story-card:hover {
 		border-color: var(--navy);
-		box-shadow: 0 22px 44px -18px rgba(11, 22, 40, 0.13);
+		box-shadow: 0 22px 44px -18px rgba(11, 22, 40, 0.14);
 	}
 
 	.story-top {
@@ -514,32 +681,107 @@ const serializedPrompts = JSON.stringify(prompts).replace(/</g, '\\u003c');
 		gap: 0.75rem;
 	}
 
+	.story-top-actions {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+	}
+
 	.story-mark {
 		font-family: var(--font-serif);
-		font-size: 2.6rem;
+		font-size: 2.5rem;
 		line-height: 0.7;
 		color: var(--gold);
 	}
 
+	.story-card[data-variant='navy'] .story-mark {
+		color: var(--gold-bright);
+	}
+
 	.story-pill {
-		font-size: 0.68rem;
+		font-size: 0.66rem;
 		font-weight: 600;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		color: var(--navy-soft);
 		background: var(--surface);
 		border: 1px solid var(--border);
-		padding: 0.25rem 0.6rem;
+		padding: 0.22rem 0.55rem;
 		border-radius: var(--radius-pill);
+	}
+
+	.story-card[data-variant='navy'] .story-pill {
+		background: rgba(255, 255, 255, 0.1);
+		border-color: rgba(255, 255, 255, 0.18);
+		color: rgba(255, 255, 255, 0.88);
+	}
+
+	.fav-btn {
+		width: 2rem;
+		height: 2rem;
+		border-radius: 50%;
+		border: 1px solid var(--border);
+		background: transparent;
+		color: var(--ink-faint);
+		font-size: 0.95rem;
+		line-height: 1;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		transition:
+			color 0.2s ease,
+			border-color 0.2s ease,
+			background-color 0.2s ease;
+	}
+
+	.fav-btn:hover {
+		border-color: var(--gold);
+		color: var(--gold);
+	}
+
+	.fav-btn.is-saved {
+		background: var(--gold-soft);
+		border-color: var(--gold);
+		color: var(--gold);
+	}
+
+	.story-card[data-variant='navy'] .fav-btn {
+		border-color: rgba(255, 255, 255, 0.22);
+		color: rgba(255, 255, 255, 0.75);
+	}
+
+	.story-card[data-variant='navy'] .fav-btn.is-saved {
+		background: rgba(207, 161, 68, 0.22);
+		border-color: var(--gold-bright);
+		color: var(--gold-bright);
+	}
+
+	.story-open-area {
+		text-align: left;
+		font-family: inherit;
+		background: transparent;
+		border: none;
+		padding: 0;
+		color: inherit;
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		flex: 1;
+		cursor: pointer;
 	}
 
 	.story-text {
 		font-family: var(--font-serif);
-		font-size: 1.35rem;
-		line-height: 1.42;
+		font-size: 1.32rem;
+		line-height: 1.44;
 		color: var(--navy);
 		margin: 0;
 		flex: 1;
+	}
+
+	.story-card[data-variant='navy'] .story-text {
+		color: #ffffff;
 	}
 
 	.story-foot {
@@ -549,6 +791,10 @@ const serializedPrompts = JSON.stringify(prompts).replace(/</g, '\\u003c');
 		gap: 0.75rem;
 		padding-top: 0.9rem;
 		border-top: 1px solid var(--border);
+	}
+
+	.story-card[data-variant='navy'] .story-foot {
+		border-top-color: rgba(255, 255, 255, 0.14);
 	}
 
 	.story-author {
@@ -572,6 +818,11 @@ const serializedPrompts = JSON.stringify(prompts).replace(/</g, '\\u003c');
 		flex-shrink: 0;
 	}
 
+	.story-card[data-variant='navy'] .author-badge {
+		background: var(--gold-bright);
+		color: var(--navy);
+	}
+
 	.author-meta {
 		display: flex;
 		flex-direction: column;
@@ -583,9 +834,17 @@ const serializedPrompts = JSON.stringify(prompts).replace(/</g, '\\u003c');
 		color: var(--navy);
 	}
 
+	.story-card[data-variant='navy'] .author-meta strong {
+		color: #ffffff;
+	}
+
 	.author-meta span {
 		font-size: 0.76rem;
 		color: var(--ink-faint);
+	}
+
+	.story-card[data-variant='navy'] .author-meta span {
+		color: rgba(255, 255, 255, 0.68);
 	}
 
 	.story-read {
@@ -593,6 +852,10 @@ const serializedPrompts = JSON.stringify(prompts).replace(/</g, '\\u003c');
 		font-weight: 600;
 		color: var(--gold);
 		white-space: nowrap;
+	}
+
+	.story-card[data-variant='navy'] .story-read {
+		color: var(--gold-bright);
 	}
 
 	.empty-state {
@@ -605,22 +868,16 @@ const serializedPrompts = JSON.stringify(prompts).replace(/</g, '\\u003c');
 
 	.curator-note {
 		margin-top: 2.5rem;
-		padding: 1.15rem 1.4rem;
-		border-radius: var(--radius);
+		padding: 1.2rem 1.45rem;
+		border-radius: var(--radius-lg);
 		background: var(--surface);
 		border: 1px solid var(--border);
-		font-size: 0.86rem;
+		font-size: 0.9rem;
 		color: var(--ink-muted);
 	}
 
 	.curator-note p {
 		margin: 0;
-	}
-
-	.curator-note code {
-		font-family: var(--font-mono);
-		font-size: 0.8rem;
-		color: var(--navy);
 	}
 
 	/* Reader Modal */
@@ -695,5 +952,11 @@ const serializedPrompts = JSON.stringify(prompts).replace(/</g, '\\u003c');
 		font-family: var(--font-mono);
 		font-size: 0.76rem;
 		color: var(--ink-faint);
+	}
+
+	@media (max-width: 860px) {
+		.head-grid {
+			grid-template-columns: 1fr;
+		}
 	}
 </style>
